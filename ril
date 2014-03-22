@@ -1,16 +1,22 @@
 #!/bin/sh
 
-ARTICLESLIST="/home/$USER/Documents/articles.txt"
+ARTICLESDIR="/home/$USER/Documents/Articles/"
 STOREDIR="/home/$USER/ReadItLater/"
 BROWSERCOMMAND=firefox
 #BROWSERCOMMAND=chromium-browser
+
+if [ ! -d "$ARTICLESDIR" ] ; then
+	mkdir "$ARTICLESDIR"
+fi
 
 if [ ! -d "$STOREDIR" ] ; then
 	mkdir "$STOREDIR"
 fi
 
 add () {
-	echo "$1" >> "$ARTICLESLIST"
+	cd "$ARTICLESDIR"
+	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
+	echo "$1" > "$FILENAME"
 	update
 }
 
@@ -38,7 +44,7 @@ open () {
 			cd ..
 		fi
 		K=$(( $K+1 ))
-	done < "$ARTICLESLIST"
+	done
 }
 
 remove () {
@@ -46,50 +52,52 @@ remove () {
 		echo Enter the number of the article you want to remove:
 		read NUMBER
 
+		cd "$ARTICLESDIR"
 		K=1
-		while read LINE ; do  
+		for ARTICLE in * ; do  
 			if [ "$K" -eq "$NUMBER" ] ; then
-				sed -i".bak" "${K}d" "$ARTICLESLIST"
+				rm "$ARTICLE"
 			fi
 			K=$(( $K+1 ))
-		done < "$ARTICLESLIST"
+		done
 }
 
 list () {
+	cd "$ARTICLESDIR"
 	K=1
-	while read LINE ; do  
-		echo "$K" \| "$LINE"
+	for ARTICLE in * ; do  
+		echo "$K" \| $(cat "$ARTICLE")
 		K=$(( $K+1 ))
-	done < "$ARTICLESLIST"
+	done
 }
 
 download () {
-	cd "$STOREDIR"
-	while read line  
-	do  
-		DIR=$(echo "$line" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
-		if [ ! -d "$DIR" ] ; then
-			echo $line
-			mkdir "$DIR"
-			wget -nd -E -H -K -k -p -q -P "$DIR" "$line"
+	cd "$ARTICLESDIR"
+	for FILE in * ; do
+		cd "$STOREDIR"
+		if [ ! -d "$FILE" ] ; then
+			mkdir "$FILE"
+			LINK="$(cat "$ARTICLESDIR"/"$FILE")"
+			echo Download "$LINK"
+			wget -nd -E -H -K -k -p -q -P "$FILE" "$LINK"
 		fi
-	done < "$ARTICLESLIST"
+	done
 }
 
 clean () {
 	cd "$STOREDIR"
 	if [ ! "$(ls)" = "" ] ; then
-	for I in * ; do
+	for DIR in * ; do
 		J=0
-		while read LINE ; do
-			LINEDIR=$(echo "$LINE" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
-			if [ "$I" = "$LINEDIR" ] ; then
+		cd "$ARTICLESDIR"
+		for FILE in * ; do
+			if [ "$DIR" = "$FILE" ] ; then
 				J=1
 			fi
-		done < "$ARTICLESLIST"
+		done
 		if [ $J -eq 0 ] ; then
-			echo Suppression de "$I"
-			rm -r "$I"
+			echo Remove "$DIR"
+			rm -r "$STOREDIR"/"$DIR"
 		fi
 	done
 	fi
