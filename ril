@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ARTICLESDIR="/home/$USER/Documents/Articles/"
 STOREDIR="/home/$USER/ReadItLater/"
@@ -50,12 +50,12 @@ remove () {
 	list
 	cd "$ARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
-		echo Enter the number of the article you want to remove:
+		echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
 		read NUMBER
 
 		K=1
 		for ARTICLE in * ; do  
-			if [ "$K" -eq "$NUMBER" ] ; then
+			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
 				rm "$ARTICLE"
 			fi
 			K=$(( $K+1 ))
@@ -163,6 +163,7 @@ case "$1" in
 		;;
 	"--remove"|"-r")
 		remove "$1"
+		clean
 		;;
 	"--open"|"-o")
 		open
