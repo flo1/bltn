@@ -17,7 +17,6 @@ add () {
 	cd "$ARTICLESDIR"
 	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
 	echo "$1" > "$FILENAME"
-	update
 }
 
 open () {
@@ -120,48 +119,61 @@ update () {
 
 usage () {
 	cat << EOF
-Utilisation: $(basename $0) [option]
-Options :  -h, --help       Display help
-           -l, --list       List saved articles
-           -u, --update     Update local copy
-           -a, --add url    Add url
-           -o, --open       Open an article
-           -r, --remove     Remove an article
+Use: $(basename $0) [option]
+Options:   -h, --help              Display help
+           -l, --list              List saved articles
+           -u, --update            Update local copy
+           -a, --add url [url2…]   Add url(s)
+           -o, --open              Open an article
+           -r, --remove            Remove an article
 EOF
 }
 
 if [ $# -eq 0 ] ; then
-	echo Error : missing argument
+	echo Error: missing argument
 	usage
 	exit 0
 fi
 
-while test $# -ne 0 ; do
-	case "$1" in
-		"--help"|"-h")
+if [ ! "$1" = "-a" ] && [ ! "$1" = "--add" ] && [ $# -ge 2 ] ; then
+	echo Error: to many arguments
+	usage
+	exit 0
+fi
+
+case "$1" in
+	"--help"|"-h")
+		usage
+		exit 0
+		;;
+	"--list"|"-l")
+		list
+		;;
+	"--add"|"-a")
+		if [ $# -eq 1 ] ; then
+			echo Error: missing argument
 			usage
 			exit 0
-			;;
-		"--list"|"-l")
-			list
-			;;
-		"--add"|"-a")
+		fi
+		while test $# -ne 1 ; do
 			shift
 			add "$1"
-			;;
-		"--remove"|"-r")
-			remove "$1"
-			;;
-		"--open"|"-o")
-			open
-			;;
-		"--update"|"-u")
-			update
-			;;
-		*)
-			echo Errorr : $1 invalid argument
-			;;
-	esac
-	shift
-done
+		done
+		update
+		;;
+	"--remove"|"-r")
+		remove "$1"
+		;;
+	"--open"|"-o")
+		open
+		;;
+	"--update"|"-u")
+		update
+		;;
+	*)
+		echo Error: $1 invalid argument
+		usage
+		exit 0
+		;;
+esac
 
