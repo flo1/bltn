@@ -48,11 +48,12 @@ open () {
 }
 
 remove () {
-		list
+	list
+	cd "$ARTICLESDIR"
+	if [ ! "$(ls)" = "" ] ; then
 		echo Enter the number of the article you want to remove:
 		read NUMBER
 
-		cd "$ARTICLESDIR"
 		K=1
 		for ARTICLE in * ; do  
 			if [ "$K" -eq "$NUMBER" ] ; then
@@ -60,42 +61,51 @@ remove () {
 			fi
 			K=$(( $K+1 ))
 		done
+	fi
 }
 
 list () {
 	cd "$ARTICLESDIR"
-	K=1
-	for ARTICLE in * ; do  
-		echo "$K" \| $(cat "$ARTICLE")
-		K=$(( $K+1 ))
-	done
+	if [ ! "$(ls)" = "" ] ; then
+		K=1
+		for ARTICLE in * ; do  
+			echo "$K" \| $(cat "$ARTICLE")
+			K=$(( $K+1 ))
+		done
+	else
+		echo No article saved
+	fi
 }
 
 download () {
 	cd "$ARTICLESDIR"
-	for FILE in * ; do
-		cd "$STOREDIR"
-		if [ ! -d "$FILE" ] ; then
-			mkdir "$FILE"
-			LINK="$(cat "$ARTICLESDIR"/"$FILE")"
-			echo Download "$LINK"
-			wget -nd -E -H -K -k -p -q -P "$FILE" "$LINK"
-		fi
-	done
+	if [ ! "$(ls)" = "" ] ; then
+		for FILE in * ; do
+			cd "$STOREDIR"
+			if [ ! -d "$FILE" ] ; then
+				mkdir "$FILE"
+				LINK="$(cat "$ARTICLESDIR"/"$FILE")"
+				echo Download "$LINK"
+				wget -nd -E -H -K -k -p -q -P "$FILE" "$LINK"
+			fi
+		done
+	fi
 }
 
 clean () {
 	cd "$STOREDIR"
 	if [ ! "$(ls)" = "" ] ; then
-	for DIR in * ; do
-		J=0
-		cd "$ARTICLESDIR"
-		for FILE in * ; do
-			if [ "$DIR" = "$FILE" ] ; then
-				J=1
+		for DIR in * ; do
+			J=0
+			cd "$ARTICLESDIR"
+			if [ ! "$(ls)" = "" ] ; then
+				for FILE in * ; do
+					if [ "$DIR" = "$FILE" ] ; then
+						J=1
+					fi
+				done
 			fi
-		done
-		if [ $J -eq 0 ] ; then
+			if [ $J -eq 0 ] ; then
 			echo Remove "$DIR"
 			rm -r "$STOREDIR"/"$DIR"
 		fi
