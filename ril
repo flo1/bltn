@@ -1,0 +1,149 @@
+#!/bin/sh
+
+ARTICLESLIST="/home/$USER/Documents/articles.txt"
+STOREDIR="/home/$USER/ReadItLater/"
+BROWSERCOMMAND=firefox
+#BROWSERCOMMAND=chromium-browser
+
+if [ ! -d "$STOREDIR" ] ; then
+	mkdir "$STOREDIR"
+fi
+
+add () {
+	echo "$1" >> "$ARTICLESLIST"
+	update
+}
+
+open () {
+	cd "$STOREDIR"
+	K=1
+	for I in * ; do
+		echo "$K" \| "$I"
+		K=$(( $K+1 ))
+	done
+
+	echo Enter the number of the article you want to read:
+	read NUMBER
+
+	K=1
+	for I in * ; do
+		if [ "$K" -eq "$NUMBER" ] ; then
+			cd "$I"
+			if [ ! "$(ls | grep html$)" = "" ] ; then
+				$BROWSERCOMMAND *.html
+			fi
+			if [ ! "$(ls | grep htm$)" = "" ] ; then
+				$BROWSERCOMMAND *.htm
+			fi
+			cd ..
+		fi
+		K=$(( $K+1 ))
+	done < "$ARTICLESLIST"
+}
+
+remove () {
+		list
+		echo Enter the number of the article you want to remove:
+		read NUMBER
+
+		K=1
+		while read LINE ; do  
+			if [ "$K" -eq "$NUMBER" ] ; then
+				sed -i".bak" "${K}d" "$ARTICLESLIST"
+			fi
+			K=$(( $K+1 ))
+		done < "$ARTICLESLIST"
+}
+
+list () {
+	K=1
+	while read LINE ; do  
+		echo "$K" \| "$LINE"
+		K=$(( $K+1 ))
+	done < "$ARTICLESLIST"
+}
+
+download () {
+	cd "$STOREDIR"
+	while read line  
+	do  
+		DIR=$(echo "$line" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
+		if [ ! -d "$DIR" ] ; then
+			echo $line
+			mkdir "$DIR"
+			wget -nd -E -H -K -k -p -q -P "$DIR" "$line"
+		fi
+	done < "$ARTICLESLIST"
+}
+
+clean () {
+	cd "$STOREDIR"
+	if [ ! "$(ls)" = "" ] ; then
+	for I in * ; do
+		J=0
+		while read LINE ; do
+			LINEDIR=$(echo "$LINE" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
+			if [ "$I" = "$LINEDIR" ] ; then
+				J=1
+			fi
+		done < "$ARTICLESLIST"
+		if [ $J -eq 0 ] ; then
+			echo Suppression de "$I"
+			rm -r "$I"
+		fi
+	done
+	fi
+}
+
+update () {
+	clean
+	download
+}
+
+usage () {
+	cat << EOF
+Utilisation: $(basename $0) [option]
+Options :  -h, --help       Display help
+           -l, --list       List saved articles
+           -u, --update     Update local copy
+           -a, --add url    Add url
+           -o, --open       Open an article
+           -r, --remove     Remove an article
+EOF
+}
+
+if [ $# -eq 0 ] ; then
+	echo Error : missing argument
+	usage
+	exit 0
+fi
+
+while test $# -ne 0 ; do
+	case "$1" in
+		"--help"|"-h")
+			usage
+			exit 0
+			;;
+		"--list"|"-l")
+			list
+			;;
+		"--add"|"-a")
+			shift
+			add "$1"
+			;;
+		"--remove"|"-r")
+			remove "$1"
+			;;
+		"--open"|"-o")
+			open
+			;;
+		"--update"|"-u")
+			update
+			;;
+		*)
+			echo Errorr : $1 invalid argument
+			;;
+	esac
+	shift
+done
+
