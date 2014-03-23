@@ -26,7 +26,7 @@ fi
 
 add () {
 	cd "$ARTICLESDIR"
-	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//_/g")
+	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
 	echo "$1" > "$FILENAME"
 }
 
@@ -34,6 +34,7 @@ open () {
 	cd "$STOREDIR"
 	K=1
 	for I in $(ls -tr) ; do
+		I="$(echo "$I" | sed "s/__/\//g")"
 		echo "$K" \| "$I"
 		K=$(( $K+1 ))
 	done
