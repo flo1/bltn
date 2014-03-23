@@ -61,17 +61,43 @@ remove () {
 	list
 	cd "$ARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
-		echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
+		case "$1" in
+			"--artcilesdir")
+				echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
+				;;
+			"--storedir")
+				echo "Enter the number(s) of the article(s) you want to re-download (ex: 1 2 4):"
+				;;
+		esac
+
 		read NUMBER
 
 		K=1
 		for ARTICLE in $(ls -tr) ; do
 			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
-				rm "$ARTICLE"
+				case "$1" in
+					"--articlesdir")
+						rm "$ARTICLE"
+						;;
+					"--storedir")
+						cd "$STOREDIR"
+						rm -r "$ARTICLE"
+						;;
+				esac
 			fi
 			K=$(( $K+1 ))
 		done
 	fi
+}
+
+remove_local () {
+	cd "$STOREDIR"
+	rm -r *
+}
+
+remove_all () {
+	cd "$ARTICLESDIR"
+	rm *
 }
 
 list () {
@@ -134,9 +160,12 @@ Use: $(basename $0) [option]
 Options:   -h, --help              Display help
            -l, --list              List saved articles
            -u, --update            Update local copy
+           -f, --force             Force re-download of an article
+           -F, --force-all         Force re-download of all articles
            -a, --add url [url2…]   Add url(s)
            -o, --open              Open an article
            -r, --remove            Remove an article
+           -R, --remove-all        Remove all articles
 EOF
 }
 
@@ -173,8 +202,20 @@ case "$1" in
 		update
 		;;
 	"--remove"|"-r")
-		remove "$1"
+		remove --articlesdir
 		clean
+		;;
+	"--remove-all"|"-R")
+		remove_all
+		clean
+		;;
+	"--force"|"-f")
+		remove --storedir
+		download
+		;;
+	"--force-all"|"-F")
+		remove_local
+		download
 		;;
 	"--open"|"-o")
 		open
