@@ -58,9 +58,13 @@ open () {
 }
 
 remove () {
-	list
 	cd "$ARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
+		K=1
+		for ARTICLE in $(ls -tr) ; do
+			echo "$K" \| $(cat "$ARTICLE")
+			K=$(( $K+1 ))
+		done
 		case "$1" in
 			"--artcilesdir")
 				echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
@@ -87,15 +91,17 @@ remove () {
 			fi
 			K=$(( $K+1 ))
 		done
+	else
+		echo No article saved
 	fi
 }
 
-remove_local () {
+remove_storedir () {
 	cd "$STOREDIR"
 	rm -r *
 }
 
-remove_all () {
+remove_articlesdir () {
 	cd "$ARTICLESDIR"
 	rm *
 }
@@ -103,10 +109,8 @@ remove_all () {
 list () {
 	cd "$ARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
-		K=1
 		for ARTICLE in $(ls -tr) ; do
-			echo "$K" \| $(cat "$ARTICLE")
-			K=$(( $K+1 ))
+			cat "$ARTICLE"
 		done
 	else
 		echo No article saved
@@ -206,7 +210,7 @@ case "$1" in
 		clean
 		;;
 	"--remove-all"|"-R")
-		remove_all
+		remove_articlesdir
 		clean
 		;;
 	"--force"|"-f")
@@ -214,7 +218,7 @@ case "$1" in
 		download
 		;;
 	"--force-all"|"-F")
-		remove_local
+		remove_storedir
 		download
 		;;
 	"--open"|"-o")
