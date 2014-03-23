@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ARTICLESDIR="/home/$USER/Documents/Articles/"
-STOREDIR="/home/$USER/ReadItLater/"
+STOREDIR="/home/$USER/.ReadItLater/"
 BROWSERCOMMAND=firefox
 #BROWSERCOMMAND=chromium-browser
 
@@ -22,7 +22,7 @@ add () {
 open () {
 	cd "$STOREDIR"
 	K=1
-	for I in * ; do
+	for I in $(ls -tr) ; do
 		echo "$K" \| "$I"
 		K=$(( $K+1 ))
 	done
@@ -31,7 +31,7 @@ open () {
 	read NUMBER
 
 	K=1
-	for I in * ; do
+	for I in $(ls -tr) ; do
 		if [ "$K" -eq "$NUMBER" ] ; then
 			cd "$I"
 			if [ ! "$(ls | grep html$)" = "" ] ; then
@@ -54,7 +54,7 @@ remove () {
 		read NUMBER
 
 		K=1
-		for ARTICLE in * ; do  
+		for ARTICLE in $(ls -tr) ; do
 			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
 				rm "$ARTICLE"
 			fi
@@ -67,7 +67,7 @@ list () {
 	cd "$ARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
 		K=1
-		for ARTICLE in * ; do  
+		for ARTICLE in $(ls -tr) ; do
 			echo "$K" \| $(cat "$ARTICLE")
 			K=$(( $K+1 ))
 		done
