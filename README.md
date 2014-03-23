@@ -1,12 +1,16 @@
 ril
 ===
 
-Script to save and manage web pages, for reading later or when you are offline.
+Shell script to save and manage web pages, for reading later or when you are
+offline.
 
-Links are saved in $ARTICLESDIR. You can synchronise this directory between
-your computers.
+At the first run, the configuration file /home/$USER/.config/ril/ril.conf is
+created. You can also change the variables.
 
-Local copy of web pages are saved in $STOREDIR. This directory doesn't need to
-be synchronised.
+$ARTICLESDIR is where the list of links is saved. You can synchronise this
+directory between your computers.
+
+$STOREDIR is where local copies of web pages are saved. This directory doesn't
+need to be synchronised.
 
 Run "ril --help" for a list of available options.

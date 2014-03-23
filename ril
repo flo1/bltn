@@ -1,9 +1,20 @@
 #!/bin/bash
 
-ARTICLESDIR="/home/$USER/Documents/Articles/"
-STOREDIR="/home/$USER/.ReadItLater/"
-BROWSERCOMMAND=firefox
-#BROWSERCOMMAND=chromium-browser
+CONFIGFILE="/home/$USER/.config/ril/ril.conf"
+
+if [ ! -f "$CONFIGFILE" ] ; then
+	mkdir -p "$(dirname "$CONFIGFILE")"
+	echo 'ARTICLESDIR="/home/$USER/Articles/"'  >> "$CONFIGFILE"
+	echo 'STOREDIR="/home/$USER/.ReadItLater/"' >> "$CONFIGFILE"
+	echo 'BROWSERCOMMAND=firefox'               >> "$CONFIGFILE"
+	echo '#BROWSERCOMMAND=chromium-browser'     >> "$CONFIGFILE"
+	echo Config file $CONFIGFILE created.
+	echo You can now edit it to change variables.
+	echo See README.md for more informations about variables.
+	exit 0
+fi
+
+. "$CONFIGFILE"
 
 if [ ! -d "$ARTICLESDIR" ] ; then
 	mkdir "$ARTICLESDIR"
