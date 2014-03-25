@@ -12,6 +12,11 @@ Features
 - Re-download an article
 - Easy synchronisation with a third party service (dropbox, ownCloud…)
 
+Depends
+---
+
+You need w3m to use this script.
+
 Installation
 ---
 
