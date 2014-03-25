@@ -4,8 +4,8 @@ CONFIGFILE="/home/$USER/.config/ril/ril.conf"
 
 if [ ! -f "$CONFIGFILE" ] ; then
 	mkdir -p "$(dirname "$CONFIGFILE")"
-	echo 'ARTICLESDIR="/home/$USER/Articles/"'  >> "$CONFIGFILE"
-	echo 'STOREDIR="/home/$USER/.ReadItLater/"' >> "$CONFIGFILE"
+	echo 'SYNCDIR="/home/$USER/Articles/"'      >> "$CONFIGFILE"
+	echo 'LOCALDIR="/home/$USER/.ReadItLater/"' >> "$CONFIGFILE"
 	echo 'BROWSERCOMMAND=firefox'               >> "$CONFIGFILE"
 	echo '#BROWSERCOMMAND=chromium-browser'     >> "$CONFIGFILE"
 	echo Config file $CONFIGFILE created.
@@ -16,13 +16,21 @@ fi
 
 . "$CONFIGFILE"
 
-if [ ! -d "$ARTICLESDIR" ] ; then
-	mkdir "$ARTICLESDIR"
-fi
+SYNCARTICLESDIR="${SYNCDIR}/articles/"
+LOCALARTICLESDIR="${LOCALDIR}/articles/"
+SYNCVIDEOSDIR="${SYNCDIR}/videos/"
+LOCALVIDEOSDIR="${LOCALDIR}/videos/"
 
-if [ ! -d "$STOREDIR" ] ; then
-	mkdir "$STOREDIR"
-fi
+create_dir () {
+	if [ ! -d "$1" ] ; then
+		mkdir -p "$1"
+	fi
+}
+
+create_dir "$SYNCARTICLESDIR"
+create_dir "$LOCALARTICLESDIR"
+create_dir "$SYNCVIDEOSDIR"
+create_dir "$LOCALVIDEOSDIR"
 
 get_title () {
 	GROSSTITLE="$(wget --quiet -O - "$1" | sed -n -e 'H;${x;s!.*<head[^>]*>\(.*\)</head>.*!\1!;tnext};b;:next;s!.*<title>\(.*\)</title>.*!\1!p')"
@@ -31,14 +39,20 @@ get_title () {
 	rm /tmp/title.html
 }
 
-add () {
-	cd "$ARTICLESDIR"
+add_article () {
+	cd "$SYNCARTICLESDIR"
+	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
+	echo "$1" > "$FILENAME"
+}
+
+add_video () {
+	cd "$SYNCVIDEOSDIR"
 	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
 	echo "$1" > "$FILENAME"
 }
 
 open () {
-	cd "$STOREDIR"
+	cd "$LOCALARTICLESDIR"
 	K=1
 	for I in $(ls -tr) ; do
 		echo "$K" \| "$(cat "$I"/title.txt)"
@@ -68,11 +82,11 @@ open () {
 }
 
 remove () {
-	cd "$ARTICLESDIR"
+	cd "$SYNCARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
 		K=1
 		for ARTICLE in $(ls -tr) ; do
-			TITLEFILE="${STOREDIR}/${ARTICLE}/title.txt"
+			TITLEFILE="${LOCALARTICLESDIR}/${ARTICLE}/title.txt"
 			if [ -f "$TITLEFILE" ] ; then
 				echo "$K" \| "$(cat "$TITLEFILE")"
 				echo \> "$(cat "$ARTICLE")"
@@ -101,7 +115,7 @@ remove () {
 						rm "$ARTICLE"
 						;;
 					"--storedir")
-						cd "$STOREDIR"
+						cd "$LOCALARTICLESDIR"
 						rm -r "$ARTICLE"
 						;;
 				esac
@@ -114,17 +128,17 @@ remove () {
 }
 
 remove_storedir () {
-	cd "$STOREDIR"
+	cd "$LOCALARTICLESDIR"
 	rm -r *
 }
 
 remove_articlesdir () {
-	cd "$ARTICLESDIR"
+	cd "$SYNCARTICLESDIR"
 	rm *
 }
 
 list () {
-	cd "$ARTICLESDIR"
+	cd "$SYNCARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
 		for ARTICLE in $(ls -tr) ; do
 			cat "$ARTICLE"
@@ -134,14 +148,14 @@ list () {
 	fi
 }
 
-download () {
-	cd "$ARTICLESDIR"
+download_articles () {
+	cd "$SYNCARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
 		for FILE in * ; do
-			cd "$STOREDIR"
+			cd "$LOCALARTICLESDIR"
 			if [ ! -d "$FILE" ] ; then
 				mkdir "$FILE"
-				LINK="$(cat "$ARTICLESDIR"/"$FILE")"
+				LINK="$(cat "$SYNCARTICLESDIR"/"$FILE")"
 				echo Download "$LINK"
 				wget -nd -E -H -K -k -p -q -P "$FILE" "$LINK"
 				echo "$(get_title "$LINK")" > "$FILE"/title.txt
@@ -150,12 +164,29 @@ download () {
 	fi
 }
 
+download_videos () {
+	cd "$SYNCVIDEOSDIR"
+	if [ ! "$(ls)" = "" ] ; then
+		for FILE in * ; do
+			cd "$LOCALVIDEOSDIR"
+			if [ ! -d "$FILE" ] ; then
+				mkdir "$FILE"
+				cd "$FILE"
+				LINK="$(cat "$SYNCVIDEOSDIR"/"$FILE")"
+				echo Download "$LINK"
+				youtube-dl "$LINK"
+				echo "$(get_title "$LINK")" > title.txt
+			fi
+		done
+	fi
+}
+
 clean () {
-	cd "$STOREDIR"
+	cd "$LOCALARTICLESDIR"
 	if [ ! "$(ls)" = "" ] ; then
 		for DIR in * ; do
 			J=0
-			cd "$ARTICLESDIR"
+			cd "$SYNCARTICLESDIR"
 			if [ ! "$(ls)" = "" ] ; then
 				for FILE in * ; do
 					if [ "$DIR" = "$FILE" ] ; then
@@ -165,10 +196,15 @@ clean () {
 			fi
 			if [ $J -eq 0 ] ; then
 			echo Remove "$DIR"
-			rm -r "$STOREDIR"/"$DIR"
+			rm -r "$LOCALARTICLESDIR"/"$DIR"
 		fi
 	done
 	fi
+}
+
+download () {
+	download_articles
+	download_videos
 }
 
 update () {
@@ -219,7 +255,7 @@ case "$1" in
 		fi
 		while test $# -ne 1 ; do
 			shift
-			add "$1"
+			add_article "$1"
 		done
 		update
 		;;
