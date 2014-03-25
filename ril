@@ -24,6 +24,13 @@ if [ ! -d "$STOREDIR" ] ; then
 	mkdir "$STOREDIR"
 fi
 
+get_title () {
+	GROSSTITLE="$(wget --quiet -O - "$1" | sed -n -e 'H;${x;s!.*<head[^>]*>\(.*\)</head>.*!\1!;tnext};b;:next;s!.*<title>\(.*\)</title>.*!\1!p')"
+	echo '<HTML><BODY>'"$GROSSTITLE"'</BODY></HTML>' > /tmp/title.html
+	w3m -dump /tmp/title.html
+	rm /tmp/title.html
+}
+
 add () {
 	cd "$ARTICLESDIR"
 	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
@@ -34,8 +41,10 @@ open () {
 	cd "$STOREDIR"
 	K=1
 	for I in $(ls -tr) ; do
+		echo "$K" \| "$(cat "$I"/title.txt)"
 		I="$(echo "$I" | sed "s/__/\//g")"
-		echo "$K" \| "$I"
+		echo \> "$I"
+		echo ==============================================
 		K=$(( $K+1 ))
 	done
 
@@ -63,11 +72,18 @@ remove () {
 	if [ ! "$(ls)" = "" ] ; then
 		K=1
 		for ARTICLE in $(ls -tr) ; do
-			echo "$K" \| $(cat "$ARTICLE")
+			TITLEFILE="${STOREDIR}/${ARTICLE}/title.txt"
+			if [ -f "$TITLEFILE" ] ; then
+				echo "$K" \| "$(cat "$TITLEFILE")"
+				echo \> "$(cat "$ARTICLE")"
+			else
+				echo "$K" \| $(cat "$ARTICLE")
+			fi
+			echo ========================================
 			K=$(( $K+1 ))
 		done
 		case "$1" in
-			"--artcilesdir")
+			"--articlesdir")
 				echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
 				;;
 			"--storedir")
@@ -128,6 +144,7 @@ download () {
 				LINK="$(cat "$ARTICLESDIR"/"$FILE")"
 				echo Download "$LINK"
 				wget -nd -E -H -K -k -p -q -P "$FILE" "$LINK"
+				echo "$(get_title "$LINK")" > "$FILE"/title.txt
 			fi
 		done
 	fi
