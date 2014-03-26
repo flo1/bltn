@@ -95,49 +95,57 @@ open () {
 	esac
 
 	cd "$DIRECTORY"
-	K=1
-	for I in $(ls -tr) ; do
-		show_local_item "$K" "$I"
-		K=$(( $K+1 ))
-	done
+	if [ ! "$(ls)" = "" ] ; then
+		K=1
+		for I in $(ls -tr) ; do
+			show_local_item "$K" "$I"
+			K=$(( $K+1 ))
+		done
 
-	echo Enter the number of the item you want to open:
-	read NUMBER
+		echo Enter the number of the item you want to open:
+		read NUMBER
 
-	K=1
-	for I in $(ls -tr) ; do
-		open_if "$K" "$NUMBER" "$I" "$1"
-		K=$(( $K+1 ))
-	done
+		K=1
+		for I in $(ls -tr) ; do
+			open_if "$K" "$NUMBER" "$I" "$1"
+			K=$(( $K+1 ))
+		done
+	else
+		echo No saved item
+	fi
 }
 
-open_all () {
-	K=1
-	cd "$LOCALARTICLESDIR"
-	for I in $(ls -tr) ; do
-		show_local_item "$K" "$I"
-		K=$(( $K+1 ))
-	done
-	cd "$LOCALVIDEOSDIR"
-	for I in $(ls -tr) ; do
-		show_local_item "$K" "$I"
-		K=$(( $K+1 ))
-	done
+open_article_video () {
+	if [ ! "$(ls "$LOCALARTICLESDIR" && ls "$LOCALVIDEOSDIR")" = "" ] ; then
+		K=1
+		cd "$LOCALARTICLESDIR"
+		for I in $(ls -tr) ; do
+			show_local_item "$K" "$I"
+			K=$(( $K+1 ))
+		done
+		cd "$LOCALVIDEOSDIR"
+		for I in $(ls -tr) ; do
+			show_local_item "$K" "$I"
+			K=$(( $K+1 ))
+		done
 
-	echo Enter the number of the item you want to open:
-	read NUMBER
+		echo Enter the number of the item you want to open:
+		read NUMBER
 
-	K=1
-	cd "$LOCALARTICLESDIR"
-	for I in $(ls -tr) ; do
-		open_if "$K" "$NUMBER" "$I" --article
-		K=$(( $K+1 ))
-	done
-	cd "$LOCALVIDEOSDIR"
-	for I in $(ls -tr) ; do
-		open_if "$K" "$NUMBER" "$I" --video
-		K=$(( $K+1 ))
-	done
+		K=1
+		cd "$LOCALARTICLESDIR"
+		for I in $(ls -tr) ; do
+			open_if "$K" "$NUMBER" "$I" --article
+			K=$(( $K+1 ))
+		done
+		cd "$LOCALVIDEOSDIR"
+		for I in $(ls -tr) ; do
+			open_if "$K" "$NUMBER" "$I" --video
+			K=$(( $K+1 ))
+		done
+	else
+		echo No saved item
+	fi
 }
 
 remove () {
@@ -191,7 +199,7 @@ remove () {
 			K=$(( $K+1 ))
 		done
 	else
-		echo No item saved
+		echo No saved item
 	fi
 }
 
@@ -263,13 +271,15 @@ remove_article_video () {
 			K=$(( $K+1 ))
 		done
 	else
-		echo No item saved
+		echo No saved item
 	fi
 }
 
 remove_dir () {
 	cd "$1"
-	rm -r *
+	if [ ! "$(ls)" = "" ] ; then
+		rm -r *
+	fi
 }
 
 list () {
@@ -279,7 +289,7 @@ list () {
 			cat "$ARTICLE"
 		done
 	else
-		echo No item saved
+		echo No saved item
 	fi
 }
 
@@ -480,7 +490,7 @@ case "$1" in
 		download --articles
 		;;
 	"--open"|"-o")
-		open_all
+		open_article_video
 		;;
 	"--open-article"|"-oa")
 		open --article
