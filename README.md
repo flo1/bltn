@@ -15,7 +15,7 @@ Features
 Depends
 ---
 
-You need w3m to use this script.
+You need wget, w3m and youtube-dl to use this script.
 
 Installation
 ---
