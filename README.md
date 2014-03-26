@@ -44,24 +44,4 @@ created. You can also change the variables :
 - $LOCALDIR is the location where local copies are saved. This directory
   doesn't need to be synchronised.
 
-Then run ril with one of this options :
-Options:   -h, --help                    Display help
-           -a, --add url [url2…]         Add url(s)
-           -av, --add-video url [url2…]  Add video(s)
-           -l, --list                    List saved articles
-           -u, --update                  Update local copy
-           -f, --force                   Force re-download of an item
-           -fa, --force-article          Force re-download of an article
-           -fv, --force-video            Force re-download of a video
-           -F, --force-all               Force re-download of all items
-           -Fa, --force-all-articles     Force re-download of all articles
-           -Fv, --force-all-videos       Force re-download of all videos
-           -o, --open                    Open an item
-           -oa, --open-article           Open an article
-           -ov, --open-video             Open an video
-           -r, --remove                  Remove an item
-           -ra, --remove-article         Remove an article
-           -rv, --remove-video           Remove an video
-           -R, --remove-all              Remove all item
-           -Ra, --remove-all-articles    Remove all articles
-           -Rv, --remove-all-videos      Remove all video
+Run "ril --help" to see the list of available options.
