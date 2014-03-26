@@ -431,27 +431,32 @@ case "$1" in
 		;;
 	"--remove"|"-r")
 		remove-article-video --syncdir
-		clean
+		clean_all
 		;;
 	"--remove-article"|"-ra")
 		remove --article --syncdir
-		clean
+		clean_all
 		;;
 	"--remove-video"|"-rv")
 		remove --video --syncdir
-		clean
+		clean_all
+		;;
+	"--remove-all"|"-R")
+		remove_dir "$SYNCARTICLESDIR"
+		remove_dir "$SYNCVIDEOSDIR"
+		clean_all
 		;;
 	"--remove-all-articles"|"-Ra")
-		remove_dir "SYNCARTICLESDIR"
-		clean
+		remove_dir "$SYNCARTICLESDIR"
+		clean_all
 		;;
 	"--remove-all-videos"|"-Rv")
-		remove_dir "SYNCVIDEOSDIR"
-		clean
+		remove_dir "$SYNCVIDEOSDIR"
+		clean_all
 		;;
 	"--force"|"-f")
 		remove-article-video --localdir
-		download
+		download_all
 		;;
 	"--force-article"|"-fa")
 		remove --article --localdir
@@ -461,11 +466,15 @@ case "$1" in
 		remove --video --localdir
 		download --videos
 		;;
-	"--force-all-articles"|"-F")
+	"--force-all"|"-F")
+		remove_dir "$LOCALARTICLESDIR"
+		remove_dir "$LOCALVIDEOSDIR"
+		download_all
+	"--force-all-articles"|"-Fa")
 		remove_dir "$LOCALARTICLESDIR"
 		download --articles
 		;;
-	"--force-all-videos"|"-F")
+	"--force-all-videos"|"-Fv")
 		remove_dir "$LOCALVIDEOSDIR"
 		download --articles
 		;;
