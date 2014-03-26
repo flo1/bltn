@@ -4,8 +4,8 @@ CONFIGFILE="/home/$USER/.config/bltn/bltn.conf"
 
 if [ ! -f "$CONFIGFILE" ] ; then
 	mkdir -p "$(dirname "$CONFIGFILE")"
-	echo 'SYNCDIR="/home/$USER/Articles/"'      >> "$CONFIGFILE"
-	echo 'LOCALDIR="/home/$USER/.ReadItLater/"' >> "$CONFIGFILE"
+	echo 'SYNCDIR="/home/$USER/BLTN/"'      >> "$CONFIGFILE"
+	echo 'LOCALDIR="/home/$USER/.bltn/"' >> "$CONFIGFILE"
 	echo 'BROWSERCOMMAND=firefox'               >> "$CONFIGFILE"
 	echo '#BROWSERCOMMAND=chromium-browser'     >> "$CONFIGFILE"
 	echo Config file $CONFIGFILE created.
@@ -53,22 +53,6 @@ add () {
 	echo "$2" > "$FILENAME"
 }
 
-open_element () {
-	case "$1" in
-		"--article")
-			if [ ! "$(ls | grep html$)" = "" ] ; then
-				$BROWSERCOMMAND *.html
-			fi
-			if [ ! "$(ls | grep htm$)" = "" ] ; then
-				$BROWSERCOMMAND *.htm
-			fi
-			;;
-		"--video")
-			vlc *.mp4
-			;;
-	esac
-}
-
 show_local_item () {
 	echo "$1" \| "$(cat "$2"/title.txt)"
 	J="$(echo "$2" | sed "s/__/\//g")"
@@ -90,7 +74,19 @@ show_sync_item () {
 open_if () {
 	if [ "$1" -eq "$2" ] ; then
 		cd "$3"
-		open_element "$4"
+		case "$4" in
+			"--article")
+				if [ ! "$(ls | grep html$)" = "" ] ; then
+					$BROWSERCOMMAND *.html
+				fi
+				if [ ! "$(ls | grep htm$)" = "" ] ; then
+					$BROWSERCOMMAND *.htm
+				fi
+				;;
+			"--video")
+				vlc *.mp4
+				;;
+		esac
 		cd ..
 	fi
 }
@@ -98,11 +94,14 @@ open_if () {
 remove_element () {
 	if [ "$(grep " $2 " <<< " $3 " )" ] ; then
 		case "$1" in
-			"--syncdir")
+			"--remove-syncdir")
 				rm "$4"
 				;;
-			"--localdir")
+			"--remove-localdir")
 				rm -r "$LOCALDIRECTORY"/"$4"
+				;;
+			"--open-url")
+				$BROWSERCOMMAND "$(cat "$4")"
 				;;
 		esac
 	fi
@@ -174,7 +173,21 @@ open_article_video () {
 	fi
 }
 
-remove () {
+process_case () {
+	case "$1" in
+		"--remove-syncdir")
+			echo "Enter the number(s) of the item(s) you want to remove (ex: 1 2 4):"
+			;;
+		"--remove-localdir")
+			echo "Enter the number(s) of the item(s) you want to re-download (ex: 1 2 4):"
+			;;
+		"--open-url")
+			echo Enter the number of the item you want to open:
+			;;
+	esac
+}
+
+process_sync () {
 	case "$1" in
 		"--article")
 			SYNCDIRECTORY="$SYNCARTICLESDIR"
@@ -193,15 +206,8 @@ remove () {
 			show_sync_item "$K" "$ITEM"
 			K=$(( $K+1 ))
 		done
-		case "$2" in
-			"--syncdir")
-				echo "Enter the number(s) of the item(s) you want to remove (ex: 1 2 4):"
-				;;
-			"--localdir")
-				echo "Enter the number(s) of the item(s) you want to re-download (ex: 1 2 4):"
-				;;
-		esac
 
+		process_case "$2"
 		read NUMBER
 
 		K=1
@@ -214,7 +220,7 @@ remove () {
 	fi
 }
 
-remove_article_video () {
+process_sync_av () {
 	if [ ! "$(ls "$SYNCARTICLESDIR" && ls "$SYNCVIDEOSDIR")" = "" ] ; then
 		K=1
 		echo ==============================================
@@ -235,14 +241,7 @@ remove_article_video () {
 			K=$(( $K+1 ))
 		done
 
-		case "$1" in
-			"--syncdir")
-				echo "Enter the number(s) of the item(s) you want to remove (ex: 1 2 4):"
-				;;
-			"--localdir")
-				echo "Enter the number(s) of the item(s) you want to re-download (ex: 1 2 4):"
-				;;
-		esac
+		process_case "$1"
 		read NUMBER
 
 		K=1
@@ -374,9 +373,12 @@ Options:   -h, --help                    Display help
            -F, --force-all               Force re-download of all items
            -Fa, --force-all-articles     Force re-download of all articles
            -Fv, --force-all-videos       Force re-download of all videos
-           -o, --open                    Open an item
-           -oa, --open-article           Open an article
-           -ov, --open-video             Open an video
+           -o, --open                    Open an downloaded item
+           -oa, --open-article           Open an downloaded article
+           -ov, --open-video             Open an downloaded video
+           -O, --open-url                Open an item's url
+           -Oa, --open-url-article       Open an article's url
+           -Ov, --open-url-video         Open an video's url
            -r, --remove                  Remove an item
            -ra, --remove-article         Remove an article
            -rv, --remove-video           Remove an video
@@ -432,15 +434,15 @@ case "$1" in
 		update
 		;;
 	"--remove"|"-r")
-		remove_article_video --syncdir
+		process_sync_av --remove-syncdir
 		clean_all
 		;;
 	"--remove-article"|"-ra")
-		remove --article --syncdir
+		process_sync --article --remove-syncdir
 		clean_all
 		;;
 	"--remove-video"|"-rv")
-		remove --video --syncdir
+		process_sync --video --remove-syncdir
 		clean_all
 		;;
 	"--remove-all"|"-R")
@@ -457,15 +459,15 @@ case "$1" in
 		clean_all
 		;;
 	"--force"|"-f")
-		remove_article_video --localdir
+		process_sync_av --remove-localdir
 		download_all
 		;;
 	"--force-article"|"-fa")
-		remove --article --localdir
+		process_sync --article --remove-localdir
 		download --articles
 		;;
 	"--force-video"|"-fv")
-		remove --video --localdir
+		process_sync --video --remove-localdir
 		download --videos
 		;;
 	"--force-all"|"-F")
@@ -489,6 +491,18 @@ case "$1" in
 		;;
 	"--open-video"|"-ov")
 		open --video
+		;;
+	"--open-url"|"-O")
+		process_sync_av --open-url
+		clean_all
+		;;
+	"--open-url-article"|"-Oa")
+		process_sync --article --open-url
+		clean_all
+		;;
+	"--open-url-video"|"-Ov")
+		process_sync --video --open-url
+		clean_all
 		;;
 	"--update"|"-u")
 		update
