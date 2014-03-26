@@ -69,6 +69,21 @@ open_element () {
 	esac
 }
 
+show_local_item () {
+	echo "$1" \| "$(cat "$2"/title.txt)"
+	J="$(echo "$2" | sed "s/__/\//g")"
+	echo \> "$J"
+	echo ==============================================
+}
+
+open_if () {
+	if [ "$1" -eq "$2" ] ; then
+		cd "$3"
+		open_element "$4"
+		cd ..
+	fi
+}
+
 open () {
 	case "$1" in
 		"--article")
@@ -82,10 +97,7 @@ open () {
 	cd "$DIRECTORY"
 	K=1
 	for I in $(ls -tr) ; do
-		echo "$K" \| "$(cat "$I"/title.txt)"
-		I="$(echo "$I" | sed "s/__/\//g")"
-		echo \> "$I"
-		echo ==============================================
+		show_local_item "$K" "$I"
 		K=$(( $K+1 ))
 	done
 
@@ -94,11 +106,7 @@ open () {
 
 	K=1
 	for I in $(ls -tr) ; do
-		if [ "$K" -eq "$NUMBER" ] ; then
-			cd "$I"
-			open_element "$1"
-			cd ..
-		fi
+		open_if "$K" "$NUMBER" "$I" "$1"
 		K=$(( $K+1 ))
 	done
 }
@@ -107,18 +115,12 @@ open_all () {
 	K=1
 	cd "$LOCALARTICLESDIR"
 	for I in $(ls -tr) ; do
-		echo "$K" \| "$(cat "$I"/title.txt)"
-		I="$(echo "$I" | sed "s/__/\//g")"
-		echo \> "$I"
-		echo ==============================================
+		show_local_item "$K" "$I"
 		K=$(( $K+1 ))
 	done
 	cd "$LOCALVIDEOSDIR"
 	for I in $(ls -tr) ; do
-		echo "$K" \| "$(cat "$I"/title.txt)"
-		I="$(echo "$I" | sed "s/__/\//g")"
-		echo \> "$I"
-		echo ==============================================
+		show_local_item "$K" "$I"
 		K=$(( $K+1 ))
 	done
 
@@ -128,20 +130,12 @@ open_all () {
 	K=1
 	cd "$LOCALARTICLESDIR"
 	for I in $(ls -tr) ; do
-		if [ "$K" -eq "$NUMBER" ] ; then
-			cd "$I"
-			open_element --article
-			cd ..
-		fi
+		open_if "$K" "$NUMBER" "$I" --article
 		K=$(( $K+1 ))
 	done
 	cd "$LOCALVIDEOSDIR"
 	for I in $(ls -tr) ; do
-		if [ "$K" -eq "$NUMBER" ] ; then
-			cd "$I"
-			open_element --video
-			cd ..
-		fi
+		open_if "$K" "$NUMBER" "$I" --video
 		K=$(( $K+1 ))
 	done
 }
@@ -205,25 +199,25 @@ remove_all () {
 	if [ ! "$(ls "$SYNCARTICLESDIR" && ls "$SYNCVIDEOSDIR")" = "" ] ; then
 		K=1
 		cd "$SYNCARTICLESDIR"
-		for ARTICLE in $(ls -tr) ; do
-			TITLEFILE="${LOCALDIRECTORY}/${ARTICLE}/title.txt"
+		for ITEM in $(ls -tr) ; do
+			TITLEFILE="${LOCALARTICLESDIR}/${ITEM}/title.txt"
 			if [ -f "$TITLEFILE" ] ; then
 				echo "$K" \| "$(cat "$TITLEFILE")"
-				echo \> "$(cat "$ARTICLE")"
+				echo \> "$(cat "$ITEM")"
 			else
-				echo "$K" \| $(cat "$ARTICLE")
+				echo "$K" \| $(cat "$ITEM")
 			fi
 			echo ========================================
 			K=$(( $K+1 ))
 		done
 		cd "$SYNCVIDEOSDIR"
-		for ARTICLE in $(ls -tr) ; do
-			TITLEFILE="${LOCALDIRECTORY}/${ARTICLE}/title.txt"
+		for ITEM in $(ls -tr) ; do
+			TITLEFILE="${LOCALVIDEOSDIR}/${ITEM}/title.txt"
 			if [ -f "$TITLEFILE" ] ; then
 				echo "$K" \| "$(cat "$TITLEFILE")"
-				echo \> "$(cat "$ARTICLE")"
+				echo \> "$(cat "$ITEM")"
 			else
-				echo "$K" \| $(cat "$ARTICLE")
+				echo "$K" \| $(cat "$ITEM")
 			fi
 			echo ========================================
 			K=$(( $K+1 ))
