@@ -470,6 +470,7 @@ case "$1" in
 		remove_dir "$LOCALARTICLESDIR"
 		remove_dir "$LOCALVIDEOSDIR"
 		download_all
+		;;
 	"--force-all-articles"|"-Fa")
 		remove_dir "$LOCALARTICLESDIR"
 		download --articles
