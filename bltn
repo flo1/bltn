@@ -191,11 +191,11 @@ remove () {
 			K=$(( $K+1 ))
 		done
 	else
-		echo No article saved
+		echo No item saved
 	fi
 }
 
-remove_all () {
+remove_article_video () {
 	if [ ! "$(ls "$SYNCARTICLESDIR" && ls "$SYNCVIDEOSDIR")" = "" ] ; then
 		K=1
 		cd "$SYNCARTICLESDIR"
@@ -279,7 +279,7 @@ list () {
 			cat "$ARTICLE"
 		done
 	else
-		echo No article saved
+		echo No item saved
 	fi
 }
 
@@ -430,7 +430,7 @@ case "$1" in
 		update
 		;;
 	"--remove"|"-r")
-		remove-article-video --syncdir
+		remove_article_video --syncdir
 		clean_all
 		;;
 	"--remove-article"|"-ra")
@@ -455,7 +455,7 @@ case "$1" in
 		clean_all
 		;;
 	"--force"|"-f")
-		remove-article-video --localdir
+		remove_article_video --localdir
 		download_all
 		;;
 	"--force-article"|"-fa")
