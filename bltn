@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFIGFILE="/home/$USER/.config/ril/ril.conf"
+CONFIGFILE="/home/$USER/.config/bltn/bltn.conf"
 
 if [ ! -f "$CONFIGFILE" ] ; then
 	mkdir -p "$(dirname "$CONFIGFILE")"
