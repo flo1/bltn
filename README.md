@@ -1,15 +1,15 @@
 ril
 ===
 
-Shell script to save and manage web pages, for reading later or when you are
-offline.
+Shell script to save and manage web pages and videos, for reading and watching
+later or when you are offline.
 
 Features
 ---
 
-- Add/remove articles
-- Download pages locally
-- Re-download an article
+- Add/remove articles and videos
+- Download pages and videos locally
+- Re-download an article or a video
 - Easy synchronisation with a third party service (dropbox, ownCloud…)
 
 Depends
@@ -39,10 +39,10 @@ Use
 
 At the first run, the configuration file /home/$USER/.config/ril/ril.conf is
 created. You can also change the variables :
-- $ARTICLESDIR is the location where the list of links is saved. You can
-synchronise this directory between your computers.
-- $STOREDIR is the location where local copies of web pages are saved. This
-directory doesn't need to be synchronised.
+- $SYNCDIR is the location where the list of links is saved. You can
+  synchronise this directory between your computers.
+- $LOCALDIR is the location where local copies are saved. This directory
+  doesn't need to be synchronised.
 
 Then run ril with one of this options :
 Options:   -h, --help                    Display help
