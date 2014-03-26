@@ -64,7 +64,7 @@ open_element () {
 			fi
 			;;
 		"--video")
-			vlc *
+			vlc *.mp4
 			;;
 	esac
 }
@@ -79,7 +79,6 @@ open () {
 			;;
 	esac
 
-	echo dir : $DIRECTORY
 	cd "$DIRECTORY"
 	K=1
 	for I in $(ls -tr) ; do
@@ -90,7 +89,7 @@ open () {
 		K=$(( $K+1 ))
 	done
 
-	echo Enter the number of the article you want to read:
+	echo Enter the number of the item you want to open:
 	read NUMBER
 
 	K=1
@@ -98,6 +97,49 @@ open () {
 		if [ "$K" -eq "$NUMBER" ] ; then
 			cd "$I"
 			open_element "$1"
+			cd ..
+		fi
+		K=$(( $K+1 ))
+	done
+}
+
+open_all () {
+	K=1
+	cd "$LOCALARTICLESDIR"
+	for I in $(ls -tr) ; do
+		echo "$K" \| "$(cat "$I"/title.txt)"
+		I="$(echo "$I" | sed "s/__/\//g")"
+		echo \> "$I"
+		echo ==============================================
+		K=$(( $K+1 ))
+	done
+	cd "$LOCALVIDEOSDIR"
+	for I in $(ls -tr) ; do
+		echo "$K" \| "$(cat "$I"/title.txt)"
+		I="$(echo "$I" | sed "s/__/\//g")"
+		echo \> "$I"
+		echo ==============================================
+		K=$(( $K+1 ))
+	done
+
+	echo Enter the number of the item you want to open:
+	read NUMBER
+
+	K=1
+	cd "$LOCALARTICLESDIR"
+	for I in $(ls -tr) ; do
+		if [ "$K" -eq "$NUMBER" ] ; then
+			cd "$I"
+			open_element --article
+			cd ..
+		fi
+		K=$(( $K+1 ))
+	done
+	cd "$LOCALVIDEOSDIR"
+	for I in $(ls -tr) ; do
+		if [ "$K" -eq "$NUMBER" ] ; then
+			cd "$I"
+			open_element --video
 			cd ..
 		fi
 		K=$(( $K+1 ))
@@ -130,11 +172,11 @@ remove () {
 			K=$(( $K+1 ))
 		done
 		case "$2" in
-			"--articlesdir")
-				echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
+			"--syncdir")
+				echo "Enter the number(s) of the item(s) you want to remove (ex: 1 2 4):"
 				;;
-			"--storedir")
-				echo "Enter the number(s) of the article(s) you want to re-download (ex: 1 2 4):"
+			"--localdir")
+				echo "Enter the number(s) of the item(s) you want to re-download (ex: 1 2 4):"
 				;;
 		esac
 
@@ -144,10 +186,10 @@ remove () {
 		for ARTICLE in $(ls -tr) ; do
 			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
 				case "$2" in
-					"--articlesdir")
+					"--syncdir")
 						rm "$ARTICLE"
 						;;
-					"--storedir")
+					"--localdir")
 						rm -r "$LOCALDIRECTORY"/"$ARTICLE"
 						;;
 				esac
@@ -156,6 +198,78 @@ remove () {
 		done
 	else
 		echo No article saved
+	fi
+}
+
+remove_all () {
+	if [ ! "$(ls "$SYNCARTICLESDIR" && ls "$SYNCVIDEOSDIR")" = "" ] ; then
+		K=1
+		cd "$SYNCARTICLESDIR"
+		for ARTICLE in $(ls -tr) ; do
+			TITLEFILE="${LOCALDIRECTORY}/${ARTICLE}/title.txt"
+			if [ -f "$TITLEFILE" ] ; then
+				echo "$K" \| "$(cat "$TITLEFILE")"
+				echo \> "$(cat "$ARTICLE")"
+			else
+				echo "$K" \| $(cat "$ARTICLE")
+			fi
+			echo ========================================
+			K=$(( $K+1 ))
+		done
+		cd "$SYNCVIDEOSDIR"
+		for ARTICLE in $(ls -tr) ; do
+			TITLEFILE="${LOCALDIRECTORY}/${ARTICLE}/title.txt"
+			if [ -f "$TITLEFILE" ] ; then
+				echo "$K" \| "$(cat "$TITLEFILE")"
+				echo \> "$(cat "$ARTICLE")"
+			else
+				echo "$K" \| $(cat "$ARTICLE")
+			fi
+			echo ========================================
+			K=$(( $K+1 ))
+		done
+		case "$1" in
+			"--syncdir")
+				echo "Enter the number(s) of the item(s) you want to remove (ex: 1 2 4):"
+				;;
+			"--localdir")
+				echo "Enter the number(s) of the item(s) you want to re-download (ex: 1 2 4):"
+				;;
+		esac
+
+		read NUMBER
+
+		K=1
+		cd "$SYNCARTICLESDIR"
+		for ITEM in $(ls -tr) ; do
+			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
+				case "$2" in
+					"--syncdir")
+						rm "$ITEM"
+						;;
+					"--localdir")
+						rm -r "$LOCALARTICLESDIR"/"$ITEM"
+						;;
+				esac
+			fi
+			K=$(( $K+1 ))
+		done
+		cd "$SYNCVIDEOSDIR"
+		for ITEM in $(ls -tr) ; do
+			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
+				case "$2" in
+					"--syncdir")
+						rm "$ITEM"
+						;;
+					"--localdir")
+						rm -r "$LOCALVIDEOSDIR"/"$ITEM"
+						;;
+				esac
+			fi
+			K=$(( $K+1 ))
+		done
+	else
+		echo No item saved
 	fi
 }
 
@@ -185,7 +299,7 @@ download () {
 		"--videos")
 			SYNCDIRECTORY="$SYNCVIDEOSDIR"
 			LOCALDIRECTORY="$LOCALVIDEOSDIR"
-			DOWNLOADCOMMAND='youtube-dl'
+			DOWNLOADCOMMAND='youtube-dl --no-playlist'
 			;;
 	esac
 	cd "$SYNCDIRECTORY"
@@ -253,15 +367,26 @@ update () {
 usage () {
 	cat << EOF
 Use: $(basename $0) [option]
-Options:   -h, --help              Display help
-           -l, --list              List saved articles
-           -u, --update            Update local copy
-           -f, --force             Force re-download of an article
-           -F, --force-all         Force re-download of all articles
-           -a, --add url [url2…]   Add url(s)
-           -o, --open              Open an article
-           -r, --remove            Remove an article
-           -R, --remove-all        Remove all articles
+Options:   -h, --help                    Display help
+           -a, --add url [url2…]         Add url(s)
+           -av, --add-video url [url2…]  Add video(s)
+           -l, --list                    List saved articles
+           -u, --update                  Update local copy
+           -f, --force                   Force re-download of an item
+           -fa, --force-article          Force re-download of an article
+           -fv, --force-video            Force re-download of a video
+           -F, --force-all               Force re-download of all items
+           -Fa, --force-all-articles     Force re-download of all articles
+           -Fv, --force-all-videos       Force re-download of all videos
+           -o, --open                    Open an item
+           -oa, --open-article           Open an article
+           -ov, --open-video             Open an video
+           -r, --remove                  Remove an item
+           -ra, --remove-article         Remove an article
+           -rv, --remove-video           Remove an video
+           -R, --remove-all              Remove all item
+           -Ra, --remove-all-articles    Remove all articles
+           -Rv, --remove-all-videos      Remove all video
 EOF
 }
 
@@ -271,7 +396,8 @@ if [ $# -eq 0 ] ; then
 	exit 0
 fi
 
-if [ ! "$1" = "-a" ] && [ ! "$1" = "--add" ] && [ $# -ge 2 ] ; then
+if [ ! "$1" = "-a" ] && [ ! "$1" = "--add" ] && [ $# -ge 2 ] && \
+   [ ! "$1" = "-av" ] && [ ! "$1" = "--add-video" ] && [ $# -ge 2 ] ; then
 	echo Error: to many arguments
 	usage
 	exit 0
@@ -297,24 +423,66 @@ case "$1" in
 		done
 		update
 		;;
+	"--add-video"|"-av")
+		if [ $# -eq 1 ] ; then
+			echo Error: missing argument
+			usage
+			exit 0
+		fi
+		while test $# -ne 1 ; do
+			shift
+			add --video "$1"
+		done
+		update
+		;;
 	"--remove"|"-r")
-		remove --article --articlesdir
+		remove-article-video --syncdir
 		clean
 		;;
-	"--remove-all"|"-R")
+	"--remove-article"|"-ra")
+		remove --article --syncdir
+		clean
+		;;
+	"--remove-video"|"-rv")
+		remove --video --syncdir
+		clean
+		;;
+	"--remove-all-articles"|"-Ra")
 		remove_dir "SYNCARTICLESDIR"
 		clean
 		;;
+	"--remove-all-videos"|"-Rv")
+		remove_dir "SYNCVIDEOSDIR"
+		clean
+		;;
 	"--force"|"-f")
-		remove --article --storedir
+		remove-article-video --localdir
+		download
+		;;
+	"--force-article"|"-fa")
+		remove --article --localdir
 		download --articles
 		;;
-	"--force-all"|"-F")
+	"--force-video"|"-fv")
+		remove --video --localdir
+		download --videos
+		;;
+	"--force-all-articles"|"-F")
 		remove_dir "$LOCALARTICLESDIR"
 		download --articles
 		;;
+	"--force-all-videos"|"-F")
+		remove_dir "$LOCALVIDEOSDIR"
+		download --articles
+		;;
 	"--open"|"-o")
+		open_all
+		;;
+	"--open-article"|"-oa")
 		open --article
+		;;
+	"--open-video"|"-ov")
+		open --video
 		;;
 	"--update"|"-u")
 		update
