@@ -76,11 +76,35 @@ show_local_item () {
 	echo ==============================================
 }
 
+show_sync_item () {
+	TITLEFILE="${LOCALDIRECTORY}/${2}/title.txt"
+	if [ -f "$TITLEFILE" ] ; then
+		echo "$1" \| "$(cat "$TITLEFILE")"
+		echo \> "$(cat "$2")"
+	else
+		echo "$1" \| $(cat "$2")
+	fi
+	echo ==============================================
+}
+
 open_if () {
 	if [ "$1" -eq "$2" ] ; then
 		cd "$3"
 		open_element "$4"
 		cd ..
+	fi
+}
+
+remove_element () {
+	if [ "$(grep " $2 " <<< " $3 " )" ] ; then
+		case "$1" in
+			"--syncdir")
+				rm "$4"
+				;;
+			"--localdir")
+				rm -r "$LOCALDIRECTORY"/"$4"
+				;;
+		esac
 	fi
 }
 
@@ -96,6 +120,7 @@ open () {
 
 	cd "$DIRECTORY"
 	if [ ! "$(ls)" = "" ] ; then
+		echo ==============================================
 		K=1
 		for I in $(ls -tr) ; do
 			show_local_item "$K" "$I"
@@ -117,6 +142,7 @@ open () {
 
 open_article_video () {
 	if [ ! "$(ls "$LOCALARTICLESDIR" && ls "$LOCALVIDEOSDIR")" = "" ] ; then
+		echo ==============================================
 		K=1
 		cd "$LOCALARTICLESDIR"
 		for I in $(ls -tr) ; do
@@ -161,16 +187,10 @@ remove () {
 	esac
 	cd "$SYNCDIRECTORY"
 	if [ ! "$(ls)" = "" ] ; then
+		echo ==============================================
 		K=1
-		for ARTICLE in $(ls -tr) ; do
-			TITLEFILE="${LOCALDIRECTORY}/${ARTICLE}/title.txt"
-			if [ -f "$TITLEFILE" ] ; then
-				echo "$K" \| "$(cat "$TITLEFILE")"
-				echo \> "$(cat "$ARTICLE")"
-			else
-				echo "$K" \| $(cat "$ARTICLE")
-			fi
-			echo ========================================
+		for ITEM in $(ls -tr) ; do
+			show_sync_item "$K" "$ITEM"
 			K=$(( $K+1 ))
 		done
 		case "$2" in
@@ -185,17 +205,8 @@ remove () {
 		read NUMBER
 
 		K=1
-		for ARTICLE in $(ls -tr) ; do
-			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
-				case "$2" in
-					"--syncdir")
-						rm "$ARTICLE"
-						;;
-					"--localdir")
-						rm -r "$LOCALDIRECTORY"/"$ARTICLE"
-						;;
-				esac
-			fi
+		for ITEM in $(ls -tr) ; do
+			remove_element "$2" "$K" "$NUMBER" "$ITEM"
 			K=$(( $K+1 ))
 		done
 	else
@@ -206,30 +217,24 @@ remove () {
 remove_article_video () {
 	if [ ! "$(ls "$SYNCARTICLESDIR" && ls "$SYNCVIDEOSDIR")" = "" ] ; then
 		K=1
-		cd "$SYNCARTICLESDIR"
+		echo ==============================================
+
+		SYNCDIRECTORY="$SYNCARTICLESDIR"
+		LOCALDIRECTORY="$LOCALARTICLESDIR"
+		cd "$SYNCDIRECTORY"
 		for ITEM in $(ls -tr) ; do
-			TITLEFILE="${LOCALARTICLESDIR}/${ITEM}/title.txt"
-			if [ -f "$TITLEFILE" ] ; then
-				echo "$K" \| "$(cat "$TITLEFILE")"
-				echo \> "$(cat "$ITEM")"
-			else
-				echo "$K" \| $(cat "$ITEM")
-			fi
-			echo ========================================
+			show_sync_item "$K" "$ITEM"
 			K=$(( $K+1 ))
 		done
-		cd "$SYNCVIDEOSDIR"
+
+		SYNCDIRECTORY="$SYNCVIDEOSDIR"
+		LOCALDIRECTORY="$LOCALVIDEOSDIR"
+		cd "$SYNCDIRECTORY"
 		for ITEM in $(ls -tr) ; do
-			TITLEFILE="${LOCALVIDEOSDIR}/${ITEM}/title.txt"
-			if [ -f "$TITLEFILE" ] ; then
-				echo "$K" \| "$(cat "$TITLEFILE")"
-				echo \> "$(cat "$ITEM")"
-			else
-				echo "$K" \| $(cat "$ITEM")
-			fi
-			echo ========================================
+			show_sync_item "$K" "$ITEM"
 			K=$(( $K+1 ))
 		done
+
 		case "$1" in
 			"--syncdir")
 				echo "Enter the number(s) of the item(s) you want to remove (ex: 1 2 4):"
@@ -238,36 +243,23 @@ remove_article_video () {
 				echo "Enter the number(s) of the item(s) you want to re-download (ex: 1 2 4):"
 				;;
 		esac
-
 		read NUMBER
 
 		K=1
-		cd "$SYNCARTICLESDIR"
+
+		SYNCDIRECTORY="$SYNCARTICLESDIR"
+		LOCALDIRECTORY="$LOCALARTICLESDIR"
+		cd "$SYNCDIRECTORY"
 		for ITEM in $(ls -tr) ; do
-			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
-				case "$2" in
-					"--syncdir")
-						rm "$ITEM"
-						;;
-					"--localdir")
-						rm -r "$LOCALARTICLESDIR"/"$ITEM"
-						;;
-				esac
-			fi
+			remove_element "$1" "$K" "$NUMBER" "$ITEM"
 			K=$(( $K+1 ))
 		done
-		cd "$SYNCVIDEOSDIR"
+
+		SYNCDIRECTORY="$SYNCVIDEOSDIR"
+		LOCALDIRECTORY="$LOCALVIDEOSDIR"
+		cd "$SYNCDIRECTORY"
 		for ITEM in $(ls -tr) ; do
-			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
-				case "$2" in
-					"--syncdir")
-						rm "$ITEM"
-						;;
-					"--localdir")
-						rm -r "$LOCALVIDEOSDIR"/"$ITEM"
-						;;
-				esac
-			fi
+			remove_element "$2" "$K" "$NUMBER" "$ITEM"
 			K=$(( $K+1 ))
 		done
 	else
