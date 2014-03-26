@@ -39,20 +39,48 @@ get_title () {
 	rm /tmp/title.html
 }
 
-add_article () {
-	cd "$SYNCARTICLESDIR"
-	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
-	echo "$1" > "$FILENAME"
+add () {
+	case "$1" in
+		"--article")
+			DIRECTORY="$SYNCARTICLESDIR"
+			;;
+		"--video")
+			DIRECTORY="$SYNCVIDEOSDIR"
+			;;
+	esac
+	cd "$DIRECTORY"
+	FILENAME=$(echo "$2" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
+	echo "$2" > "$FILENAME"
 }
 
-add_video () {
-	cd "$SYNCVIDEOSDIR"
-	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
-	echo "$1" > "$FILENAME"
+open_element () {
+	case "$1" in
+		"--article")
+			if [ ! "$(ls | grep html$)" = "" ] ; then
+				$BROWSERCOMMAND *.html
+			fi
+			if [ ! "$(ls | grep htm$)" = "" ] ; then
+				$BROWSERCOMMAND *.htm
+			fi
+			;;
+		"--video")
+			vlc *
+			;;
+	esac
 }
 
 open () {
-	cd "$LOCALARTICLESDIR"
+	case "$1" in
+		"--article")
+			DIRECTORY="$LOCALARTICLESDIR"
+			;;
+		"--video")
+			DIRECTORY="$LOCALVIDEOSDIR"
+			;;
+	esac
+
+	echo dir : $DIRECTORY
+	cd "$DIRECTORY"
 	K=1
 	for I in $(ls -tr) ; do
 		echo "$K" \| "$(cat "$I"/title.txt)"
@@ -69,12 +97,7 @@ open () {
 	for I in $(ls -tr) ; do
 		if [ "$K" -eq "$NUMBER" ] ; then
 			cd "$I"
-			if [ ! "$(ls | grep html$)" = "" ] ; then
-				$BROWSERCOMMAND *.html
-			fi
-			if [ ! "$(ls | grep htm$)" = "" ] ; then
-				$BROWSERCOMMAND *.htm
-			fi
+			open_element "$1"
 			cd ..
 		fi
 		K=$(( $K+1 ))
@@ -82,11 +105,21 @@ open () {
 }
 
 remove () {
-	cd "$SYNCARTICLESDIR"
+	case "$1" in
+		"--article")
+			SYNCDIRECTORY="$SYNCARTICLESDIR"
+			LOCALDIRECTORY="$LOCALARTICLESDIR"
+			;;
+		"--video")
+			SYNCDIRECTORY="$SYNCVIDEOSDIR"
+			LOCALDIRECTORY="$LOCALVIDEOSDIR"
+			;;
+	esac
+	cd "$SYNCDIRECTORY"
 	if [ ! "$(ls)" = "" ] ; then
 		K=1
 		for ARTICLE in $(ls -tr) ; do
-			TITLEFILE="${LOCALARTICLESDIR}/${ARTICLE}/title.txt"
+			TITLEFILE="${LOCALDIRECTORY}/${ARTICLE}/title.txt"
 			if [ -f "$TITLEFILE" ] ; then
 				echo "$K" \| "$(cat "$TITLEFILE")"
 				echo \> "$(cat "$ARTICLE")"
@@ -96,7 +129,7 @@ remove () {
 			echo ========================================
 			K=$(( $K+1 ))
 		done
-		case "$1" in
+		case "$2" in
 			"--articlesdir")
 				echo "Enter the number(s) of the article(s) you want to remove (ex: 1 2 4):"
 				;;
@@ -110,13 +143,12 @@ remove () {
 		K=1
 		for ARTICLE in $(ls -tr) ; do
 			if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
-				case "$1" in
+				case "$2" in
 					"--articlesdir")
 						rm "$ARTICLE"
 						;;
 					"--storedir")
-						cd "$LOCALARTICLESDIR"
-						rm -r "$ARTICLE"
+						rm -r "$LOCALDIRECTORY"/"$ARTICLE"
 						;;
 				esac
 			fi
@@ -127,14 +159,9 @@ remove () {
 	fi
 }
 
-remove_storedir () {
-	cd "$LOCALARTICLESDIR"
+remove_dir () {
+	cd "$1"
 	rm -r *
-}
-
-remove_articlesdir () {
-	cd "$SYNCARTICLESDIR"
-	rm *
 }
 
 list () {
@@ -148,33 +175,29 @@ list () {
 	fi
 }
 
-download_articles () {
-	cd "$SYNCARTICLESDIR"
+download () {
+	case "$1" in
+		"--articles")
+			SYNCDIRECTORY="$SYNCARTICLESDIR"
+			LOCALDIRECTORY="$LOCALARTICLESDIR"
+			DOWNLOADCOMMAND='wget -nd -E -H -K -k -p -q '
+			;;
+		"--videos")
+			SYNCDIRECTORY="$SYNCVIDEOSDIR"
+			LOCALDIRECTORY="$LOCALVIDEOSDIR"
+			DOWNLOADCOMMAND='youtube-dl'
+			;;
+	esac
+	cd "$SYNCDIRECTORY"
 	if [ ! "$(ls)" = "" ] ; then
 		for FILE in * ; do
-			cd "$LOCALARTICLESDIR"
-			if [ ! -d "$FILE" ] ; then
-				mkdir "$FILE"
-				LINK="$(cat "$SYNCARTICLESDIR"/"$FILE")"
-				echo Download "$LINK"
-				wget -nd -E -H -K -k -p -q -P "$FILE" "$LINK"
-				echo "$(get_title "$LINK")" > "$FILE"/title.txt
-			fi
-		done
-	fi
-}
-
-download_videos () {
-	cd "$SYNCVIDEOSDIR"
-	if [ ! "$(ls)" = "" ] ; then
-		for FILE in * ; do
-			cd "$LOCALVIDEOSDIR"
+			cd "$LOCALDIRECTORY"
 			if [ ! -d "$FILE" ] ; then
 				mkdir "$FILE"
 				cd "$FILE"
-				LINK="$(cat "$SYNCVIDEOSDIR"/"$FILE")"
+				LINK="$(cat "$SYNCDIRECTORY"/"$FILE")"
 				echo Download "$LINK"
-				youtube-dl "$LINK"
+				$DOWNLOADCOMMAND "$LINK"
 				echo "$(get_title "$LINK")" > title.txt
 			fi
 		done
@@ -182,11 +205,21 @@ download_videos () {
 }
 
 clean () {
-	cd "$LOCALARTICLESDIR"
+	case "$1" in
+		"--articles")
+			SYNCDIRECTORY="$SYNCARTICLESDIR"
+			LOCALDIRECTORY="$LOCALARTICLESDIR"
+			;;
+		"--videos")
+			SYNCDIRECTORY="$SYNCVIDEOSDIR"
+			LOCALDIRECTORY="$LOCALVIDEOSDIR"
+			;;
+	esac
+	cd "$LOCALDIRECTORY"
 	if [ ! "$(ls)" = "" ] ; then
 		for DIR in * ; do
 			J=0
-			cd "$SYNCARTICLESDIR"
+			cd "$SYNCDIRECTORY"
 			if [ ! "$(ls)" = "" ] ; then
 				for FILE in * ; do
 					if [ "$DIR" = "$FILE" ] ; then
@@ -196,20 +229,25 @@ clean () {
 			fi
 			if [ $J -eq 0 ] ; then
 			echo Remove "$DIR"
-			rm -r "$LOCALARTICLESDIR"/"$DIR"
+			rm -r "$LOCALDIRECTORY"/"$DIR"
 		fi
 	done
 	fi
 }
 
-download () {
-	download_articles
-	download_videos
+download_all () {
+	download --articles
+	download --videos
+}
+
+clean_all () {
+	clean --articles
+	clean --videos
 }
 
 update () {
-	clean
-	download
+	clean_all
+	download_all
 }
 
 usage () {
@@ -255,28 +293,28 @@ case "$1" in
 		fi
 		while test $# -ne 1 ; do
 			shift
-			add_article "$1"
+			add --article "$1"
 		done
 		update
 		;;
 	"--remove"|"-r")
-		remove --articlesdir
+		remove --article --articlesdir
 		clean
 		;;
 	"--remove-all"|"-R")
-		remove_articlesdir
+		remove_dir "SYNCARTICLESDIR"
 		clean
 		;;
 	"--force"|"-f")
-		remove --storedir
-		download
+		remove --article --storedir
+		download --articles
 		;;
 	"--force-all"|"-F")
-		remove_storedir
-		download
+		remove_dir "$LOCALARTICLESDIR"
+		download --articles
 		;;
 	"--open"|"-o")
-		open
+		open --article
 		;;
 	"--update"|"-u")
 		update
