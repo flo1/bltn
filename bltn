@@ -76,11 +76,15 @@ open_if () {
 		cd "$3"
 		case "$4" in
 			"--article")
-				if [ ! "$(ls | grep html$)" = "" ] ; then
-					$BROWSERCOMMAND *.html
-				fi
-				if [ ! "$(ls | grep htm$)" = "" ] ; then
-					$BROWSERCOMMAND *.htm
+				FILE="$(cat "url.txt" | grep -o "[^/]*$")"
+				if [ -f "$FILE" ] ; then
+					$BROWSERCOMMAND "$(echo "$FILE" | sed "s/\?/%3F/g")"
+				elif [ -f "${FILE}.html" ] ; then
+					$BROWSERCOMMAND "$(echo "$FILE" | sed "s/\?/%3F/g").html"
+				elif [ -f index.html ] ; then
+					$BROWSERCOMMAND index.html
+				else
+					$BROWSERCOMMAND "$(ls index*.html | sed "s/\?/%3F/g")"
 				fi
 				;;
 			"--video")
@@ -308,6 +312,7 @@ download () {
 				echo Download "$LINK"
 				$DOWNLOADCOMMAND "$LINK"
 				echo "$(get_title "$LINK")" > title.txt
+				echo "$LINK" > url.txt
 			fi
 		done
 	fi
