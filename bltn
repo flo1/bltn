@@ -49,14 +49,15 @@ add () {
 			;;
 	esac
 	cd "$DIRECTORY"
-	FILENAME=$(echo "$2" | sed "s/\/\//%/g" | cut -d% -f2 | sed "s/\//__/g")
+	FILENAME=$(echo "$2" | sed "s/\/\//%/g" | cut -d% -f2 \
+	                     | sed "s/\//__/g" \
+	                     | sed "s/\?/QM/g" )
 	echo "$2" > "$FILENAME"
 }
 
 show_local_item () {
 	echo "$1" \| "$(cat "$2"/title.txt)"
-	J="$(echo "$2" | sed "s/__/\//g")"
-	echo \> "$J"
+	echo \> "$(cat "$2"/url.txt)"
 	echo ==============================================
 }
 
