@@ -5,9 +5,10 @@ CONFIGFILE="/home/$USER/.config/bltn/bltn.conf"
 if [ ! -f "$CONFIGFILE" ] ; then
 	mkdir -p "$(dirname "$CONFIGFILE")"
 	echo 'SYNCDIR="/home/$USER/BLTN/"'      >> "$CONFIGFILE"
-	echo 'LOCALDIR="/home/$USER/.bltn/"' >> "$CONFIGFILE"
-	echo 'BROWSERCOMMAND=firefox'               >> "$CONFIGFILE"
-	echo '#BROWSERCOMMAND=chromium-browser'     >> "$CONFIGFILE"
+	echo 'LOCALDIR="/home/$USER/.bltn/"'    >> "$CONFIGFILE"
+	echo 'BROWSERCOMMAND=firefox'           >> "$CONFIGFILE"
+	echo '#BROWSERCOMMAND=chromium-browser' >> "$CONFIGFILE"
+	echo 'VIDEOPLAYER=vlc'                  >> "$CONFIGFILE"
 	echo Config file $CONFIGFILE created.
 	echo You can now edit it to change variables.
 	echo See README.md for more informations about variables.
@@ -89,7 +90,7 @@ open_if () {
 				fi
 				;;
 			"--video")
-				vlc *.mp4
+				$VIDEOPLAYER "$(ls *[^txt$])"
 				;;
 		esac
 		cd ..
