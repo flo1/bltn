@@ -1,0 +1,6 @@
+#!/bin/bash
+
+xdotool key "ctrl+l"
+URL=$(xclip -o)
+notify-send -t 5000 "$URL saved."
+bltn -av "$URL"

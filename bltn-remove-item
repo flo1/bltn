@@ -1,0 +1,10 @@
+#!/bin/bash
+
+xdotool key "ctrl+l"
+URL=$(xclip -o)
+if [ "$(bltn -lu | grep "$URL")" = "" ] ; then
+	notify-send -t 5000 "$URL was not saved."
+else
+	notify-send -t 5000 "$URL removed."
+	bltn -d "$URL"
+fi
