@@ -190,6 +190,9 @@ process_case () {
 		"--open-url")
 			echo Enter the number of the item you want to open:
 			;;
+		"--list")
+			exit 0
+			;;
 	esac
 }
 
@@ -279,11 +282,11 @@ remove_dir () {
 	fi
 }
 
-list () {
-	cd "$SYNCARTICLESDIR"
-	if [ ! "$(ls)" = "" ] ; then
-		for ARTICLE in $(ls -tr) ; do
-			cat "$ARTICLE"
+list_urls () {
+	cd "$SYNCDIR"
+	if [ ! "$(ls */)" = "" ] ; then
+		for ITEM in */* ; do
+			cat "$ITEM"
 		done
 	else
 		echo No saved item
@@ -372,7 +375,10 @@ Use: $(basename $0) [option]
 Options:   -h, --help                    Display help
            -a, --add url [url2…]         Add url(s)
            -av, --add-video url [url2…]  Add video(s)
-           -l, --list                    List saved articles
+           -l, --list                    List saved items
+           -la, --list-articles          List saved articles
+           -lv, --list-videos            List saved videos
+           -lu, --list-urls              List only urls
            -u, --update                  Update local copy
            -f, --force                   Force re-download of an item
            -fa, --force-article          Force re-download of an article
@@ -414,7 +420,16 @@ case "$1" in
 		exit 0
 		;;
 	"--list"|"-l")
-		list
+		process_sync_av --list
+		;;
+	"--list-articles"|"-la")
+		process_sync --article --list
+		;;
+	"--list-videos"|"-lv")
+		process_sync --video --list
+		;;
+	"--list-urls"|"-lu")
+		list_urls
 		;;
 	"--add"|"-a")
 		if [ $# -eq 1 ] ; then
