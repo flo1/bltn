@@ -264,7 +264,7 @@ process_sync_av () {
 		LOCALDIRECTORY="$LOCALVIDEOSDIR"
 		cd "$SYNCDIRECTORY"
 		for ITEM in $(ls -tr) ; do
-			remove_element "$2" "$K" "$NUMBER" "$ITEM"
+			remove_element "$1" "$K" "$NUMBER" "$ITEM"
 			K=$(( $K+1 ))
 		done
 	else
@@ -344,10 +344,10 @@ clean () {
 				done
 			fi
 			if [ $J -eq 0 ] ; then
-			echo Remove "$DIR"
-			rm -r "$LOCALDIRECTORY"/"$DIR"
-		fi
-	done
+				echo Remove "$(cat "${LOCALDIRECTORY}/${DIR}/url.txt")"
+				rm -r "$LOCALDIRECTORY"/"$DIR"
+			fi
+		done
 	fi
 }
 
@@ -426,7 +426,7 @@ case "$1" in
 			shift
 			add --article "$1"
 		done
-		update
+		download --articles
 		;;
 	"--add-video"|"-av")
 		if [ $# -eq 1 ] ; then
@@ -438,7 +438,7 @@ case "$1" in
 			shift
 			add --video "$1"
 		done
-		update
+		download --videos
 		;;
 	"--remove"|"-r")
 		process_sync_av --remove-syncdir
