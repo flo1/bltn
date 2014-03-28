@@ -8,7 +8,7 @@ install:
 	cp bltn-remove-item /usr/local/bin
 	chmod +x /usr/local/bin/bltn-remove-item
 
-clean:
+uninstall:
 	rm /usr/local/bin/bltn
 	rm /usr/local/bin/bltn-add-article
 	rm /usr/local/bin/bltn-add-video

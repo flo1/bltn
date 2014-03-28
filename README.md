@@ -60,3 +60,12 @@ You can add keybord shortcuts for the following scripts :
 
 Now when you see a page in your browser, you can quickly add it or remove it.
 This should works at least with Firefox and Chromium.
+
+Uninstallation
+---
+
+Go into BLTN previously downloaded directory and run as root :
+
+	sudo make uninstall
+
+
