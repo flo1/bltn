@@ -275,6 +275,25 @@ process_sync_av () {
 	fi
 }
 
+delete_element () {
+	URL=$(cat "$2")
+	if [ "$1" = "$URL" ] ; then
+		rm "$2"
+	fi
+}
+
+delete () {
+		cd "$SYNCARTICLESDIR"
+		for ITEM in $(ls -tr) ; do
+			delete_element "$1" "$ITEM"
+		done
+
+		cd "$SYNCVIDEOSDIR"
+		for ITEM in $(ls -tr) ; do
+			delete_element "$1" "$ITEM"
+		done
+}
+
 remove_dir () {
 	cd "$1"
 	if [ ! "$(ls)" = "" ] ; then
@@ -395,6 +414,7 @@ Options:   -h, --help                    Display help
            -r, --remove                  Remove an item
            -ra, --remove-article         Remove an article
            -rv, --remove-video           Remove an video
+           -d, --delete url              Remove url
            -R, --remove-all              Remove all item
            -Ra, --remove-all-articles    Remove all articles
            -Rv, --remove-all-videos      Remove all video
@@ -408,7 +428,8 @@ if [ $# -eq 0 ] ; then
 fi
 
 if [ ! "$1" = "-a" ] && [ ! "$1" = "--add" ] && [ $# -ge 2 ] && \
-   [ ! "$1" = "-av" ] && [ ! "$1" = "--add-video" ] && [ $# -ge 2 ] ; then
+   [ ! "$1" = "-av" ] && [ ! "$1" = "--add-video" ] && \
+   [ ! "$1" = "-d" ] && [ ! "$1" = "--delete" ] ; then
 	echo Error: to many arguments
 	usage
 	exit 0
@@ -478,6 +499,10 @@ case "$1" in
 		;;
 	"--remove-all-videos"|"-Rv")
 		remove_dir "$SYNCVIDEOSDIR"
+		clean_all
+		;;
+	"--delete"|"-d")
+		delete "$2"
 		clean_all
 		;;
 	"--force"|"-f")
