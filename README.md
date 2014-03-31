@@ -19,6 +19,10 @@ Depends
 You need wget, w3m and youtube-dl to use this script.
 If you use the others script, you will need libnotify and xdotool.
 
+On Ubuntu, you can install all dependencies with this command :
+
+	sudo apt-get install w3m youtube-dl libnotify-bin xdotool
+
 Installation
 ---
 
