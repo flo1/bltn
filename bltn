@@ -283,21 +283,22 @@ delete_element () {
 }
 
 delete () {
-		cd "$SYNCARTICLESDIR"
-		for ITEM in $(ls -tr) ; do
-			delete_element "$1" "$ITEM"
-		done
+	cd "$SYNCARTICLESDIR"
+	for ITEM in $(ls -tr) ; do
+		delete_element "$1" "$ITEM"
+	done
 
-		cd "$SYNCVIDEOSDIR"
-		for ITEM in $(ls -tr) ; do
-			delete_element "$1" "$ITEM"
-		done
+	cd "$SYNCVIDEOSDIR"
+	for ITEM in $(ls -tr) ; do
+		delete_element "$1" "$ITEM"
+	done
 
-		FILE="$(echo "$1" | sed "s/file:\/\///g")"
-		if [ -f "$FILE" ] ; then
-			URL="$(cat "$(dirname "$FILE")/url.txt")"
-			delete "$URL"
-		fi
+	FILE="$(echo "$1" | sed "s/file:\/\///g")"
+	DIR="$(dirname "$FILE")"
+	if [ -d "$DIR" ] ; then
+		URL="$(cat "${DIR}/url.txt")"
+		delete "$URL"
+	fi
 }
 
 remove_dir () {
