@@ -1,0 +1,138 @@
+#!/bin/bash
+
+CONFIGFILE="/home/$USER/.config/bltn/bltn.conf"
+. "$CONFIGFILE"
+
+ARTICLESRSSDIR="${SYNCDIR}/rss2bltn/articles_rss/"
+VIDEOSRSSDIR="${SYNCDIR}/rss2bltn/videos_rss/"
+ARTICLESDIR="${SYNCDIR}/articles/"
+ALLARTICLESDIR="${SYNCDIR}/rss2bltn/articles"
+VIDEOSDIR="${SYNCDIR}/videos/"
+ALLVIDEOSDIR="${SYNCDIR}/rss2bltn/videos"
+
+create_dir () {
+	if [ ! -d "$1" ] ; then
+		mkdir -p "$1"
+	fi
+}
+
+create_dir "$ARTICLESRSSDIR"
+create_dir "$VIDEOSRSSDIR"
+create_dir "$ALLARTICLESDIR"
+create_dir "$ALLVIDEOSDIR"
+
+add () {
+	case "$1" in
+		"--article")
+			DIRECTORY="$ARTICLESRSSDIR"
+			;;
+		"--video")
+			DIRECTORY="$VIDEOSRSSDIR"
+			;;
+	esac
+	cd "$DIRECTORY"
+	FILENAME=$(echo "$2" | sed "s/\/\//%/g" | cut -d% -f2 \
+	                     | sed "s/\//__/g" \
+	                     | sed "s/\?/QM/g" )
+	echo "$2" > "$FILENAME"
+}
+
+update () {
+	case "$1" in
+		"--articles")
+			ALLDIR="$ALLARTICLESDIR"
+			RSSDIR="$ARTICLESRSSDIR"
+			ARG="-a"
+			;;
+		"--videos")
+			ALLDIR="$ALLVIDEOSDIR"
+			RSSDIR="$VIDEOSRSSDIR"
+			ARG="-av"
+			;;
+	esac
+	for FILE in $(ls "$RSSDIR") ; do
+		create_dir "${ALLDIR}/${FILE}"
+		RSSURL="$(cat "${RSSDIR}/${FILE}")"
+		URLLIST="$(rsstail --url --no-heading -e 1 "$RSSURL" 2>/dev/null)"
+		for URL in $URLLIST ; do
+			cd "${ALLDIR}/${FILE}"
+			COMPTEUR=0
+			for I in $(ls) ; do
+				URL2="$(cat "$I")"
+				if [ "$URL" = "$URL2" ] ; then
+					COMPTEUR=1
+				fi
+			done
+			if [ "$COMPTEUR" = 0 ] ; then
+				FILENAME=$(echo "$URL" | sed "s/\/\//%/g" | cut -d% -f2 \
+					                   | sed "s/\//__/g" \
+					                   | sed "s/\?/QM/g" )
+				echo "$URL" > "${ALLDIR}/${FILE}/${FILENAME}"
+				echo bltn "$ARG" "$URL"
+			fi
+		done
+	done
+}
+
+case "$1" in
+	"--help"|"-h")
+		usage
+		exit 0
+		;;
+	"--add"|"-a")
+		if [ $# -eq 1 ] ; then
+			echo Error: missing argument
+			usage
+			exit 0
+		fi
+		while test $# -ne 1 ; do
+			shift
+			add --article "$1"
+		done
+		;;
+	"--add-video"|"-av")
+		if [ $# -eq 1 ] ; then
+			echo Error: missing argument
+			usage
+			exit 0
+		fi
+		while test $# -ne 1 ; do
+			shift
+			add --video "$1"
+		done
+		;;
+	"--remove"|"-r")
+		process_sync_av --remove-syncdir
+		clean_all
+		;;
+	"--remove-article"|"-ra")
+		process_sync --article --remove-syncdir
+		clean_all
+		;;
+	"--remove-video"|"-rv")
+		process_sync --video --remove-syncdir
+		clean_all
+		;;
+	"--remove-all"|"-R")
+		remove_dir "$SYNCARTICLESDIR"
+		remove_dir "$SYNCVIDEOSDIR"
+		clean_all
+		;;
+	"--remove-all-articles"|"-Ra")
+		remove_dir "$SYNCARTICLESDIR"
+		clean_all
+		;;
+	"--remove-all-videos"|"-Rv")
+		remove_dir "$SYNCVIDEOSDIR"
+		clean_all
+		;;
+	"--update"|"-u")
+		update --articles
+		update --videos
+		;;
+	*)
+		echo Error: $1 invalid argument
+		usage
+		exit 0
+		;;
+esac
