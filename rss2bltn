@@ -68,7 +68,9 @@ update () {
 					                   | sed "s/\//__/g" \
 					                   | sed "s/\?/QM/g" )
 				echo "$URL" > "${ALLDIR}/${FILE}/${FILENAME}"
-				echo bltn "$ARG" "$URL"
+				if [ "$2" != "--no-add" ] ; then
+					bltn "$ARG" "$URL"
+				fi
 			fi
 		done
 	done
@@ -89,6 +91,7 @@ case "$1" in
 			shift
 			add --article "$1"
 		done
+		update --articles --no-add
 		;;
 	"--add-video"|"-av")
 		if [ $# -eq 1 ] ; then
@@ -100,6 +103,7 @@ case "$1" in
 			shift
 			add --video "$1"
 		done
+		update --videos --no-add
 		;;
 	"--remove"|"-r")
 		process_sync_av --remove-syncdir
