@@ -1,11 +1,11 @@
 #!/bin/bash
 
-CONFIGFILE="/home/$USER/.config/bltn/bltn.conf"
+CONFIGFILE="${HOME}/.config/bltn/bltn.conf"
 
 if [ ! -f "$CONFIGFILE" ] ; then
 	mkdir -p "$(dirname "$CONFIGFILE")"
-	echo 'SYNCDIR="/home/$USER/BLTN/"'      >> "$CONFIGFILE"
-	echo 'LOCALDIR="/home/$USER/.bltn/"'    >> "$CONFIGFILE"
+	echo 'SYNCDIR="${HOME}/BLTN/"'      >> "$CONFIGFILE"
+	echo 'LOCALDIR="${HOME}/.bltn/"'    >> "$CONFIGFILE"
 	echo 'BROWSERCOMMAND=firefox'           >> "$CONFIGFILE"
 	echo '#BROWSERCOMMAND=chromium-browser' >> "$CONFIGFILE"
 	echo 'VIDEOPLAYER=vlc'                  >> "$CONFIGFILE"

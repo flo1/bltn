@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFIGFILE="/home/$USER/.config/bltn/bltn.conf"
+CONFIGFILE="${HOME}/.config/bltn/bltn.conf"
 . "$CONFIGFILE"
 
 ARTICLESRSSDIR="${SYNCDIR}/rss2bltn/articles_rss/"
@@ -53,6 +53,7 @@ update () {
 	for FILE in $(ls "$RSSDIR") ; do
 		create_dir "${ALLDIR}/${FILE}"
 		RSSURL="$(cat "${RSSDIR}/${FILE}")"
+		echo Checking $RSSURL
 		URLLIST="$(rsstail --url --no-heading -e 1 "$RSSURL" 2>/dev/null)"
 		for URL in $URLLIST ; do
 			cd "${ALLDIR}/${FILE}"
