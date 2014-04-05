@@ -65,14 +65,52 @@ update () {
 			done
 			if [ "$COMPTEUR" = 0 ] ; then
 				FILENAME=$(echo "$URL" | sed "s/\/\//%/g" | cut -d% -f2 \
-					                   | sed "s/\//__/g" \
-					                   | sed "s/\?/QM/g" )
+				                       | sed "s/\//__/g" \
+				                       | sed "s/\?/QM/g" )
 				echo "$URL" > "${ALLDIR}/${FILE}/${FILENAME}"
 				if [ "$2" != "--no-add" ] ; then
-					bltn "$ARG" "$URL"
+					notify-send -t 5000 "$URL added."
+					bltn "$ARG" "$URL" && notify-send -t 5000 "$URL downloaded." &
 				fi
 			fi
 		done
+	done
+}
+
+clean () {
+	case "$1" in
+		"--articles")
+			ALLDIR="$ALLARTICLESDIR"
+			RSSDIR="$ARTICLESRSSDIR"
+			ARG="-a"
+			;;
+		"--videos")
+			ALLDIR="$ALLVIDEOSDIR"
+			RSSDIR="$VIDEOSRSSDIR"
+			ARG="-av"
+			;;
+	esac
+	cd "$ALLDIR"
+	for DIR in $(ls) ; do
+		if [ -f "${RSSDIR}/${DIR}" ] ; then
+			cd "${ALLDIR}/${DIR}"
+			for FILE in $(ls) ; do
+				URL="$(cat "${ALLDIR}/${DIR}/${FILE}")"
+				RSSURL="$(cat "${RSSDIR}/${DIR}")"
+				URLLIST="$(rsstail --url --no-heading -e 1 "$RSSURL" 2>/dev/null)"
+				COMPTEUR=0
+				for URL2 in $URLLIST ; do
+					if [ "$URL" = "$URL2" ] ; then
+						COMPTEUR=1
+					fi
+				done
+				if [ "$COMPTEUR" -eq 0 ] ; then
+					rm "${ALLDIR}/${DIR}/${FILE}"
+				fi
+			done
+		else
+			rm -r "${ALLDIR}/${DIR}"
+		fi
 	done
 }
 
@@ -81,7 +119,7 @@ case "$1" in
 		usage
 		exit 0
 		;;
-	"--add"|"-a")
+	"--add-feed"|"-a")
 		if [ $# -eq 1 ] ; then
 			echo Error: missing argument
 			usage
@@ -93,7 +131,7 @@ case "$1" in
 		done
 		update --articles --no-add
 		;;
-	"--add-video"|"-av")
+	"--add-video-feed"|"-av")
 		if [ $# -eq 1 ] ; then
 			echo Error: missing argument
 			usage
@@ -105,34 +143,25 @@ case "$1" in
 		done
 		update --videos --no-add
 		;;
-	"--remove"|"-r")
-		process_sync_av --remove-syncdir
-		clean_all
+	"--remove-feed"|"-r")
 		;;
-	"--remove-article"|"-ra")
-		process_sync --article --remove-syncdir
-		clean_all
+	"--remove-article-feed"|"-ra")
 		;;
-	"--remove-video"|"-rv")
-		process_sync --video --remove-syncdir
-		clean_all
+	"--remove-video-feed"|"-rv")
 		;;
-	"--remove-all"|"-R")
-		remove_dir "$SYNCARTICLESDIR"
-		remove_dir "$SYNCVIDEOSDIR"
-		clean_all
+	"--remove-all-feed"|"-R")
 		;;
-	"--remove-all-articles"|"-Ra")
-		remove_dir "$SYNCARTICLESDIR"
-		clean_all
+	"--remove-all-articles-feed"|"-Ra")
 		;;
-	"--remove-all-videos"|"-Rv")
-		remove_dir "$SYNCVIDEOSDIR"
-		clean_all
+	"--remove-all-videos-feed"|"-Rv")
 		;;
 	"--update"|"-u")
 		update --articles
 		update --videos
+		;;
+	"--clean"|"-c")
+		clean --articles
+		clean --videos
 		;;
 	*)
 		echo Error: $1 invalid argument
