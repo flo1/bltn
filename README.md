@@ -65,6 +65,12 @@ You can add keybord shortcuts for the following scripts :
 Now when you see a page in your browser, you can quickly add it or remove it.
 This should works at least with Firefox and Chromium.
 
+RSS2BLTN
+---
+
+This script adds automaticly articles and videos from RSS feeds in BLTN.
+It depends on rsstail.py https://github.com/gvalkov/rsstail.py
+
 Uninstallation
 ---
 
