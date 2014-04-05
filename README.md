@@ -7,21 +7,37 @@ when you are offline.
 Features
 ---
 
+BLTN :
 - Add/remove articles and videos
 - Download pages and videos locally
 - Re-download an article or a video
 - Easy synchronisation with a third party service (dropbox, ownCloud…)
-- Create shortcuts for quickly adding and removing items.
+
+BLTN add and remove scripts :
+- add and remove items quickly from your browser
+
+RSS2BLTN :
+- Add automaticly new articles from RSS feeds to BLTN
+- Add automaticly new videos from Youtube RSS feed to BLTN
+- Synchronisation like BLTN
+
+A Youtube RSS feed looks generaly like this :
+
+	http://www.youtube.com/rss/user/USERNAME/videos.rss 
 
 Depends
 ---
 
-You need wget, w3m and youtube-dl to use this script.
-If you use the others script, you will need libnotify and xdotool.
+You need wget, w3m and youtube-dl to use BLTN.
+
+If you use the BLTN add and remove scripts, you will need libnotify and xdotool.
+
+RSS2BLTN depends on rsstail.py https://github.com/gvalkov/rsstail.py
 
 On Ubuntu, you can install all dependencies with this command :
 
 	sudo apt-get install w3m youtube-dl libnotify-bin xdotool
+	sudo pip install rsstail
 
 Installation
 ---
@@ -65,11 +81,25 @@ You can add keybord shortcuts for the following scripts :
 Now when you see a page in your browser, you can quickly add it or remove it.
 This should works at least with Firefox and Chromium.
 
-RSS2BLTN
+Exemple of cron jobs
 ---
 
-This script adds automaticly articles and videos from RSS feeds in BLTN.
-It depends on rsstail.py https://github.com/gvalkov/rsstail.py
+To add cron jobs, run
+
+	crontab -e
+
+then paste the following lines :;
+
+	# Env
+	SHELL=/bin/bash
+	HOME=/home/florian
+	PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+	# Cmd cron
+	30 * * * * bash /usr/local/bin/bltn     -u >> /tmp/bltn.log 2>&1
+	0 * * * *  bash /usr/local/bin/rss2bltn -u >> /tmp/rss2bltn.log 2>&1
+	0 0 1 * *  bash /usr/local/bin/rss2bltn -c >> /tmp/rss2bltn.log 2>&1
+
+BLTN and RSS2BLTN will now be updated each hour.
 
 Uninstallation
 ---
