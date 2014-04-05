@@ -114,6 +114,17 @@ clean () {
 	done
 }
 
+usage () {
+	cat << EOF
+Use: $(basename $0) [option]
+Options:   -h, --help                    Display help
+           -a, --add-feed url [url2…]    Add RSS feed(s)
+           -av, --add-video-feed url[s]  Add videos RSS feed(s)
+           -u, --update                  Update articles and videos
+           -c, --clean                   Clean
+EOF
+}
+
 case "$1" in
 	"--help"|"-h")
 		usage
