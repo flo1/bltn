@@ -140,6 +140,15 @@ open () {
 			open_if "$K" "$NUMBER" "$I" "$1"
 			K=$(( $K+1 ))
 		done
+
+		echo "Do you want to remove this / those item(s) ?"
+		read ANSWER
+		case "$ANSWER" in
+			y*|o*|Y*|O*)
+				echo "$NUMBER" | process_sync "$1" --remove-syncdir > /dev/null
+				clean "$1"
+				;;
+		esac
 	else
 		echo No saved item
 	fi
@@ -174,6 +183,15 @@ open_article_video () {
 			open_if "$K" "$NUMBER" "$I" --video
 			K=$(( $K+1 ))
 		done
+
+		echo "Do you want to remove this / those item(s) ?"
+		read ANSWER
+		case "$ANSWER" in
+			y*|o*|Y*|O*)
+				echo "$NUMBER" | process_sync_av --remove-syncdir > /dev/null
+				clean_all
+				;;
+		esac
 	else
 		echo No saved item
 	fi
@@ -321,12 +339,12 @@ list_urls () {
 
 download () {
 	case "$1" in
-		"--articles")
+		"--article")
 			SYNCDIRECTORY="$SYNCARTICLESDIR"
 			LOCALDIRECTORY="$LOCALARTICLESDIR"
 			DOWNLOADCOMMAND='wget -nd -E -H -K -k -p -q '
 			;;
-		"--videos")
+		"--video")
 			SYNCDIRECTORY="$SYNCVIDEOSDIR"
 			LOCALDIRECTORY="$LOCALVIDEOSDIR"
 			DOWNLOADCOMMAND='youtube-dl --no-playlist'
@@ -351,11 +369,11 @@ download () {
 
 clean () {
 	case "$1" in
-		"--articles")
+		"--article")
 			SYNCDIRECTORY="$SYNCARTICLESDIR"
 			LOCALDIRECTORY="$LOCALARTICLESDIR"
 			;;
-		"--videos")
+		"--video")
 			SYNCDIRECTORY="$SYNCVIDEOSDIR"
 			LOCALDIRECTORY="$LOCALVIDEOSDIR"
 			;;
@@ -381,13 +399,13 @@ clean () {
 }
 
 download_all () {
-	download --articles
-	download --videos
+	download --article
+	download --video
 }
 
 clean_all () {
-	clean --articles
-	clean --videos
+	clean --article
+	clean --video
 }
 
 update () {
@@ -469,7 +487,7 @@ case "$1" in
 			shift
 			add --article "$1"
 		done
-		download --articles
+		download --article
 		;;
 	"--add-video"|"-av")
 		if [ $# -eq 1 ] ; then
@@ -481,7 +499,7 @@ case "$1" in
 			shift
 			add --video "$1"
 		done
-		download --videos
+		download --video
 		;;
 	"--remove"|"-r")
 		process_sync_av --remove-syncdir
@@ -518,11 +536,11 @@ case "$1" in
 		;;
 	"--force-article"|"-fa")
 		process_sync --article --remove-localdir
-		download --articles
+		download --article
 		;;
 	"--force-video"|"-fv")
 		process_sync --video --remove-localdir
-		download --videos
+		download --video
 		;;
 	"--force-all"|"-F")
 		remove_dir "$LOCALARTICLESDIR"
@@ -531,11 +549,11 @@ case "$1" in
 		;;
 	"--force-all-articles"|"-Fa")
 		remove_dir "$LOCALARTICLESDIR"
-		download --articles
+		download --article
 		;;
 	"--force-all-videos"|"-Fv")
 		remove_dir "$LOCALVIDEOSDIR"
-		download --articles
+		download --article
 		;;
 	"--open"|"-o")
 		open_article_video
