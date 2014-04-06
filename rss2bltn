@@ -115,12 +115,97 @@ clean () {
 	done
 }
 
+list () {
+	case "$1" in
+		"--articles")
+			RSSDIR="$ARTICLESRSSDIR"
+			;;
+		"--videos")
+			RSSDIR="$VIDEOSRSSDIR"
+			;;
+	esac
+	cd "$RSSDIR"
+	for FILE in $(ls) ; do
+		cat "$FILE"
+	done
+}
+
+remove () {
+	case "$1" in
+		"--articles")
+			RSSDIR="$ARTICLESRSSDIR"
+			;;
+		"--videos")
+			RSSDIR="$VIDEOSRSSDIR"
+			;;
+	esac
+	cd "$RSSDIR"
+	K=1
+	for FILE in $(ls) ; do
+		echo "$K" \| "$(cat "$FILE")"
+		K=$(( $K + 1 ))
+	done
+	
+	echo "Enter the number of the feed you want to remove :"
+	read NUMBER
+
+	K=1
+	for FILE in $(ls) ; do
+		if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
+			echo Remove "$FILE"
+			rm "$FILE"
+		fi
+		K=$(( $K + 1 ))
+	done
+}
+
+remove_articles_videos () {
+	K=1
+	cd "$ARTICLESRSSDIR"
+	for FILE in $(ls) ; do
+		echo "$K" | "$(cat "$FILE")"
+		K=$(( $K + 1 ))
+	done
+	cd "$VIDEOSRSSDIR"
+	for FILE in $(ls) ; do
+		echo "$K" \| "$(cat "$FILE")"
+		K=$(( $K + 1 ))
+	done
+	
+	echo "Enter the number of the feed you want to remove :"
+	read NUMBER
+
+	K=1
+	cd "$ARTICLESRSSDIR"
+	for FILE in $(ls) ; do
+		if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
+			echo Remove "$FILE"
+			rm "$FILE"
+		fi
+		K=$(( $K + 1 ))
+	done
+	cd "$VIDEOSRSSDIR"
+	for FILE in $(ls) ; do
+		if [ "$(grep " $K " <<< " $NUMBER " )" ] ; then
+			echo Remove "$FILE"
+			rm "$FILE"
+		fi
+		K=$(( $K + 1 ))
+	done
+}
+
 usage () {
 	cat << EOF
 Use: $(basename $0) [option]
 Options:   -h, --help                    Display help
            -a, --add-feed url [url2…]    Add RSS feed(s)
            -av, --add-video-feed url[s]  Add videos RSS feed(s)
+           -r                            Remove a feed
+           -ra                           Remove articles feeds
+           -rv                           Remove videos feeds
+           -l                            Remove feeds
+           -la                           List articles feed
+           -lv                           List videos feed
            -u, --update                  Update articles and videos
            -c, --clean                   Clean
 EOF
@@ -156,16 +241,29 @@ case "$1" in
 		update --videos --no-add
 		;;
 	"--remove-feed"|"-r")
+		remove_articles_videos
 		;;
 	"--remove-article-feed"|"-ra")
+		remove --articles
 		;;
 	"--remove-video-feed"|"-rv")
+		remove --videos
 		;;
 	"--remove-all-feed"|"-R")
 		;;
 	"--remove-all-articles-feed"|"-Ra")
 		;;
 	"--remove-all-videos-feed"|"-Rv")
+		;;
+	"--list"|"-l")
+		list --articles
+		list --videos
+		;;
+	"--list-articles"|"-la")
+		list --articles
+		;;
+	"--list-videos"|"-lv")
+		list --videos
 		;;
 	"--update"|"-u")
 		update --articles

@@ -341,9 +341,9 @@ download () {
 				cd "$FILE"
 				LINK="$(cat "$SYNCDIRECTORY"/"$FILE")"
 				echo Download "$LINK"
-				$DOWNLOADCOMMAND "$LINK"
 				echo "$(get_title "$LINK")" > title.txt
 				echo "$LINK" > url.txt
+				$DOWNLOADCOMMAND "$LINK"
 			fi
 		done
 	fi
