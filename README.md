@@ -4,6 +4,10 @@ Better Late Than Never (bltn)
 Shell script to save web pages and videos, for reading or watching later, or
 when you are offline.
 
+You can use this script without any synchronisation, but you can too synchonise
+a folder with a third party service like dropbox or ownCloud so that your items
+will be shared between your different GNU/Linux computers.
+
 Features
 ---
 
@@ -14,7 +18,7 @@ BLTN :
 - Easy synchronisation with a third party service (dropbox, ownCloud…)
 
 BLTN add and remove scripts :
-- add and remove items quickly from your browser
+- add and remove items quickly from your browser with keyboard shortcuts
 
 RSS2BLTN :
 - Add automaticly new articles from RSS feeds to BLTN
