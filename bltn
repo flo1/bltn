@@ -4,12 +4,16 @@ CONFIGFILE="${HOME}/.config/bltn/bltn.conf"
 
 if [ ! -f "$CONFIGFILE" ] ; then
 	mkdir -p "$(dirname "$CONFIGFILE")"
-	echo 'SYNCDIR="${HOME}/BLTN/"'      >> "$CONFIGFILE"
-	echo 'LOCALDIR="${HOME}/.bltn/"'    >> "$CONFIGFILE"
-	echo 'BROWSERCOMMAND=firefox'           >> "$CONFIGFILE"
-	echo '#BROWSERCOMMAND=chromium-browser' >> "$CONFIGFILE"
-	echo 'VIDEOPLAYER=vlc'                  >> "$CONFIGFILE"
-	echo Config file $CONFIGFILE created.
+
+	{
+		echo 'SYNCDIR="${HOME}/BLTN/"'
+		echo 'LOCALDIR="${HOME}/.bltn/"'
+		echo 'BROWSERCOMMAND=firefox'
+		echo '#BROWSERCOMMAND=chromium-browser' 
+		echo 'VIDEOPLAYER=vlc'
+	} >> "$CONFIGFILE"
+
+	echo Config file "$CONFIGFILE" created.
 	echo You can now edit it to change variables.
 	echo See README.md for more informations about variables.
 	exit 0
@@ -68,7 +72,7 @@ show_sync_item () {
 		echo "$1" \| "$(cat "$TITLEFILE")"
 		echo \> "$(cat "$2")"
 	else
-		echo "$1" \| $(cat "$2")
+		echo "$1" \| "$(cat "$2")"
 	fi
 	echo ==============================================
 }
@@ -78,7 +82,7 @@ open_if () {
 		cd "$3"
 		case "$4" in
 			"--article")
-				FILE="$(cat "url.txt" | grep -o "[^/]*$")"
+				FILE="$(grep -o "[^/]*$" url.txt)"
 				if [ -f "$FILE" ] ; then
 					$BROWSERCOMMAND "$(echo "$FILE" | sed "s/\?/%3F/g")"
 				elif [ -f "${FILE}.html" ] ; then
@@ -90,7 +94,7 @@ open_if () {
 				fi
 				;;
 			"--video")
-				$VIDEOPLAYER "$(ls *[^txt$])"
+				$VIDEOPLAYER "$(ls ./*[^t])"
 				;;
 		esac
 		cd ..
@@ -129,7 +133,7 @@ open () {
 		K=1
 		for I in $(ls -tr) ; do
 			show_local_item "$K" "$I"
-			K=$(( $K+1 ))
+			K=$(( K+1 ))
 		done
 
 		echo Enter the number of the item you want to open:
@@ -138,7 +142,7 @@ open () {
 		K=1
 		for I in $(ls -tr) ; do
 			open_if "$K" "$NUMBER" "$I" "$1"
-			K=$(( $K+1 ))
+			K=$(( K+1 ))
 		done
 
 		echo "Do you want to remove this / those item(s) ?"
@@ -161,12 +165,12 @@ open_article_video () {
 		cd "$LOCALARTICLESDIR"
 		for I in $(ls -tr) ; do
 			show_local_item "$K" "$I"
-			K=$(( $K+1 ))
+			K=$(( K+1 ))
 		done
 		cd "$LOCALVIDEOSDIR"
 		for I in $(ls -tr) ; do
 			show_local_item "$K" "$I"
-			K=$(( $K+1 ))
+			K=$(( K+1 ))
 		done
 
 		echo Enter the number of the item you want to open:
@@ -176,12 +180,12 @@ open_article_video () {
 		cd "$LOCALARTICLESDIR"
 		for I in $(ls -tr) ; do
 			open_if "$K" "$NUMBER" "$I" --article
-			K=$(( $K+1 ))
+			K=$(( K+1 ))
 		done
 		cd "$LOCALVIDEOSDIR"
 		for I in $(ls -tr) ; do
 			open_if "$K" "$NUMBER" "$I" --video
-			K=$(( $K+1 ))
+			K=$(( K+1 ))
 		done
 
 		echo "Do you want to remove this / those item(s) ?"
@@ -322,13 +326,13 @@ delete () {
 remove_dir () {
 	cd "$1"
 	if [ ! "$(ls)" = "" ] ; then
-		rm -r *
+		rm -r ./*
 	fi
 }
 
 list_urls () {
 	cd "$SYNCDIR"
-	if [ ! "$(ls */)" = "" ] ; then
+	if [ ! "$(ls ./*/)" = "" ] ; then
 		for ITEM in */* ; do
 			cat "$ITEM"
 		done
@@ -359,7 +363,7 @@ download () {
 				cd "$FILE"
 				LINK="$(cat "$SYNCDIRECTORY"/"$FILE")"
 				echo Download "$LINK"
-				echo "$(get_title "$LINK")" > title.txt
+				get_title "$LINK" > title.txt
 				echo "$LINK" > url.txt
 				$DOWNLOADCOMMAND "$LINK"
 			fi
@@ -415,7 +419,7 @@ update () {
 
 usage () {
 	cat << EOF
-Use: $(basename $0) [option]
+Use: $(basename "$0") [option]
 Options:   -h, --help                    Display help
            -a, --add url [url2…]         Add url(s)
            -av, --add-video url [url2…]  Add video(s)
@@ -580,7 +584,7 @@ case "$1" in
 		update
 		;;
 	*)
-		echo Error: $1 invalid argument
+		echo Error: "$1" invalid argument
 		usage
 		exit 0
 		;;
