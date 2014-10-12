@@ -1,30 +1,24 @@
 #!/bin/bash
 
-CONFIGFILE="${HOME}/.config/bltn/bltn.conf"
+CONFIG_FILE="${HOME}/.config/bltn/bltn.conf"
 
-if [ ! -f "$CONFIGFILE" ] ; then
-	mkdir -p "$(dirname "$CONFIGFILE")"
+if [ ! -f "$CONFIG_FILE" ] ; then
+	mkdir -p "$(dirname "$CONFIG_FILE")"
 
 	{
-		echo 'SYNCDIR="${HOME}/BLTN/"'
-		echo 'LOCALDIR="${HOME}/.bltn/"'
-		echo 'BROWSERCOMMAND=firefox'
-		echo '#BROWSERCOMMAND=chromium-browser' 
-		echo 'VIDEOPLAYER=vlc'
-	} >> "$CONFIGFILE"
+		echo 'SYNC_DIR="${HOME}/BLTN/"'
+		echo 'LOCAL_DIR="${HOME}/.bltn/"'
+		echo 'BROWSER_COMMAND=firefox'
+		echo '#BROWSER_COMMAND=chromium-browser' 
+	} >> "$CONFIG_FILE"
 
-	echo Config file "$CONFIGFILE" created.
+	echo Config file "$CONFIG_FILE" created.
 	echo You can now edit it to change variables.
 	echo See README.md for more informations about variables.
 	exit 0
 fi
 
-. "$CONFIGFILE"
-
-SYNCARTICLESDIR="${SYNCDIR}/articles/"
-LOCALARTICLESDIR="${LOCALDIR}/articles/"
-SYNCVIDEOSDIR="${SYNCDIR}/videos/"
-LOCALVIDEOSDIR="${LOCALDIR}/videos/"
+. "$CONFIG_FILE"
 
 create_dir () {
 	if [ ! -d "$1" ] ; then
@@ -32,33 +26,29 @@ create_dir () {
 	fi
 }
 
-create_dir "$SYNCARTICLESDIR"
-create_dir "$LOCALARTICLESDIR"
-create_dir "$SYNCVIDEOSDIR"
-create_dir "$LOCALVIDEOSDIR"
+create_dir "$SYNC_DIR"
+create_dir "$LOCAL_DIR"
+
 
 get_title () {
-	GROSSTITLE="$(wget --quiet -O - "$1" | sed -n -e 'H;${x;s!.*<head[^>]*>\(.*\)</head>.*!\1!;tnext};b;:next;s!.*<title>\(.*\)</title>.*!\1!p')"
-	echo '<HTML><BODY>'"$GROSSTITLE"'</BODY></HTML>' > /tmp/title.html
-	w3m -dump /tmp/title.html
+	GROSS_TITLE="$(wget --quiet -O - "$1" | sed -n -e 'H;${x;s!.*<head[^>]*>\(.*\)</head>.*!\1!;tnext};b;:next;s!.*<title>\(.*\)</title>.*!\1!p')"
+	echo '<HTML><BODY>'"$GROSS_TITLE"'</BODY></HTML>' > /tmp/title.html
+	w3m -dump -cols 9999 /tmp/title.html
 	rm /tmp/title.html
 }
 
+
+# add url
 add () {
-	case "$1" in
-		"--article")
-			DIRECTORY="$SYNCARTICLESDIR"
-			;;
-		"--video")
-			DIRECTORY="$SYNCVIDEOSDIR"
-			;;
-	esac
-	cd "$DIRECTORY"
-	FILENAME=$(echo "$2" | sed "s/\/\//%/g" | cut -d% -f2 \
+	cd "$SYNC_DIR"
+	FILENAME=$(echo "$1" | sed "s/\/\//%/g" | cut -d% -f2 \
 	                     | sed "s/\//__/g" \
 	                     | sed "s/\?/QM/g" )
-	echo "$2" > "$FILENAME"
+	if [ ! -f "$FILENAME" ] ; then
+		echo "$1" > "$FILENAME"
+	fi
 }
+
 
 show_local_item () {
 	echo "$1" \| "$(cat "$2"/title.txt)"
@@ -66,8 +56,9 @@ show_local_item () {
 	echo ==============================================
 }
 
+
 show_sync_item () {
-	TITLEFILE="${LOCALDIRECTORY}/${2}/title.txt"
+	TITLEFILE="${LOCAL_DIR}/${2}/title.txt"
 	if [ -f "$TITLEFILE" ] ; then
 		echo "$1" \| "$(cat "$TITLEFILE")"
 		echo \> "$(cat "$2")"
@@ -77,129 +68,58 @@ show_sync_item () {
 	echo ==============================================
 }
 
+
 open_if () {
-	if [ "$(grep " $1 " <<< " $2 " )" ] ; then
-		cd "$3"
-		case "$4" in
-			"--article")
-				FILE="$(grep -o "[^/]*$" url.txt)"
-				if [ -f "$FILE" ] ; then
-					$BROWSERCOMMAND "$(echo "$FILE" | sed "s/\?/%3F/g")"
-				elif [ -f "${FILE}.html" ] ; then
-					$BROWSERCOMMAND "$(echo "$FILE" | sed "s/\?/%3F/g").html"
-				elif [ -f index.html ] ; then
-					$BROWSERCOMMAND index.html
-				else
-					$BROWSERCOMMAND "$(ls index*.html | sed "s/\?/%3F/g")"
-				fi
-				;;
-			"--video")
-				$VIDEOPLAYER "$(ls ./*[^t])"
-				;;
-		esac
-		cd ..
+	FILE="$(grep -o "[^/]*$" url.txt)"
+
+	if [ -f "$FILE" ]
+	then
+		$BROWSER_COMMAND "$(echo "$FILE" | sed "s/\?/%3F/g")"
+	elif [ -f "${FILE}.html" ]
+	then
+		$BROWSER_COMMAND "$(echo "$FILE" | sed "s/\?/%3F/g").html"
+	elif [ -f index.html ]
+	then
+		$BROWSER_COMMAND index.html
+	else
+		$BROWSER_COMMAND "$(ls index*.html | sed "s/\?/%3F/g")"
 	fi
 }
 
-remove_element () {
-	if [ "$(grep " $2 " <<< " $3 " )" ] ; then
-		case "$1" in
-			"--remove-syncdir")
-				rm "$4"
-				;;
-			"--remove-localdir")
-				rm -r "$LOCALDIRECTORY"/"$4"
-				;;
-			"--open-url")
-				$BROWSERCOMMAND "$(cat "$4")"
-				;;
-		esac
-	fi
-}
 
 open () {
-	case "$1" in
-		"--article")
-			DIRECTORY="$LOCALARTICLESDIR"
-			;;
-		"--video")
-			DIRECTORY="$LOCALVIDEOSDIR"
+	cd "$LOCAL_DIR"
+	TMP="/tmp/bltn.txt"
+	ls -tr > "$TMP"
+	echo ==============================================
+	
+	K=1
+	while read DIR
+	do
+		show_local_item "$K" "$DIR"
+		K=$(( K+1 ))
+	done < "$TMP"
+
+	echo Enter the number of the item you want to open:
+	read NUMBER
+
+	ITEM=$(sed -n "$NUMBER"p "$TMP")
+	cd "$ITEM"
+	open_if
+	cd ..
+
+	echo "Do you want to remove this / those item(s) ?"
+	read ANSWER
+	case "$ANSWER" in
+		y*|o*|Y*|O*)
+			rm "${SYNC_DIR}/${ITEM}"
+			clean
 			;;
 	esac
-
-	cd "$DIRECTORY"
-	if [ ! "$(ls)" = "" ] ; then
-		echo ==============================================
-		K=1
-		for I in $(ls -tr) ; do
-			show_local_item "$K" "$I"
-			K=$(( K+1 ))
-		done
-
-		echo Enter the number of the item you want to open:
-		read NUMBER
-
-		K=1
-		for I in $(ls -tr) ; do
-			open_if "$K" "$NUMBER" "$I" "$1"
-			K=$(( K+1 ))
-		done
-
-		echo "Do you want to remove this / those item(s) ?"
-		read ANSWER
-		case "$ANSWER" in
-			y*|o*|Y*|O*)
-				echo "$NUMBER" | process_sync "$1" --remove-syncdir > /dev/null
-				clean "$1"
-				;;
-		esac
-	else
-		echo No saved item
-	fi
+	
+	rm "$TMP"
 }
 
-open_article_video () {
-	if [ ! "$(ls "$LOCALARTICLESDIR" && ls "$LOCALVIDEOSDIR")" = "" ] ; then
-		echo ==============================================
-		K=1
-		cd "$LOCALARTICLESDIR"
-		for I in $(ls -tr) ; do
-			show_local_item "$K" "$I"
-			K=$(( K+1 ))
-		done
-		cd "$LOCALVIDEOSDIR"
-		for I in $(ls -tr) ; do
-			show_local_item "$K" "$I"
-			K=$(( K+1 ))
-		done
-
-		echo Enter the number of the item you want to open:
-		read NUMBER
-
-		K=1
-		cd "$LOCALARTICLESDIR"
-		for I in $(ls -tr) ; do
-			open_if "$K" "$NUMBER" "$I" --article
-			K=$(( K+1 ))
-		done
-		cd "$LOCALVIDEOSDIR"
-		for I in $(ls -tr) ; do
-			open_if "$K" "$NUMBER" "$I" --video
-			K=$(( K+1 ))
-		done
-
-		echo "Do you want to remove this / those item(s) ?"
-		read ANSWER
-		case "$ANSWER" in
-			y*|o*|Y*|O*)
-				echo "$NUMBER" | process_sync_av --remove-syncdir > /dev/null
-				clean_all
-				;;
-		esac
-	else
-		echo No saved item
-	fi
-}
 
 process_case () {
 	case "$1" in
@@ -219,116 +139,73 @@ process_case () {
 }
 
 process_sync () {
+	cd "$SYNC_DIR"
+	TMP="/tmp/bltn.txt"
+	ls -tr > "$TMP"
+	echo ==============================================
+	
+	K=1
+	while read ITEM
+	do
+		show_sync_item "$K" "$ITEM"
+		K=$(( K+1 ))
+	done < "$TMP"
+	
+	process_case "$1"
+	read NUMBER
+
+	ITEM=$(sed -n "$NUMBER"p "$TMP")
 	case "$1" in
-		"--article")
-			SYNCDIRECTORY="$SYNCARTICLESDIR"
-			LOCALDIRECTORY="$LOCALARTICLESDIR"
+		"--remove-syncdir")
+			rm "$ITEM"
 			;;
-		"--video")
-			SYNCDIRECTORY="$SYNCVIDEOSDIR"
-			LOCALDIRECTORY="$LOCALVIDEOSDIR"
+		"--remove-localdir")
+			rm -r "${LOCAL_DIR}/${ITEM}"
+			;;
+		"--open-url")
+			$BROWSER_COMMAND "$(cat "$ITEM")"
 			;;
 	esac
-	cd "$SYNCDIRECTORY"
-	if [ ! "$(ls)" = "" ] ; then
-		echo ==============================================
-		K=1
-		for ITEM in $(ls -tr) ; do
-			show_sync_item "$K" "$ITEM"
-			K=$(( $K+1 ))
-		done
-
-		process_case "$2"
-		read NUMBER
-
-		K=1
-		for ITEM in $(ls -tr) ; do
-			remove_element "$2" "$K" "$NUMBER" "$ITEM"
-			K=$(( $K+1 ))
-		done
-	else
-		echo No saved item
-	fi
+	
+	rm "$TMP"
 }
 
-process_sync_av () {
-	if [ ! "$(ls "$SYNCARTICLESDIR" && ls "$SYNCVIDEOSDIR")" = "" ] ; then
-		K=1
-		echo ==============================================
-
-		SYNCDIRECTORY="$SYNCARTICLESDIR"
-		LOCALDIRECTORY="$LOCALARTICLESDIR"
-		cd "$SYNCDIRECTORY"
-		for ITEM in $(ls -tr) ; do
-			show_sync_item "$K" "$ITEM"
-			K=$(( $K+1 ))
-		done
-
-		SYNCDIRECTORY="$SYNCVIDEOSDIR"
-		LOCALDIRECTORY="$LOCALVIDEOSDIR"
-		cd "$SYNCDIRECTORY"
-		for ITEM in $(ls -tr) ; do
-			show_sync_item "$K" "$ITEM"
-			K=$(( $K+1 ))
-		done
-
-		process_case "$1"
-		read NUMBER
-
-		K=1
-
-		SYNCDIRECTORY="$SYNCARTICLESDIR"
-		LOCALDIRECTORY="$LOCALARTICLESDIR"
-		cd "$SYNCDIRECTORY"
-		for ITEM in $(ls -tr) ; do
-			remove_element "$1" "$K" "$NUMBER" "$ITEM"
-			K=$(( $K+1 ))
-		done
-
-		SYNCDIRECTORY="$SYNCVIDEOSDIR"
-		LOCALDIRECTORY="$LOCALVIDEOSDIR"
-		cd "$SYNCDIRECTORY"
-		for ITEM in $(ls -tr) ; do
-			remove_element "$1" "$K" "$NUMBER" "$ITEM"
-			K=$(( $K+1 ))
-		done
-	else
-		echo No saved item
-	fi
-}
 
 delete_element () {
 	URL=$(cat "$2")
-	if [ "$1" = "$URL" ] ; then
+	if [ "$1" = "$URL" ]
+	then
 		rm "$2"
 	fi
 }
 
-delete () {
-	cd "$SYNCARTICLESDIR"
-	for ITEM in $(ls -tr) ; do
-		delete_element "$1" "$ITEM"
-	done
 
-	cd "$SYNCVIDEOSDIR"
-	for ITEM in $(ls -tr) ; do
+# delete URL
+delete () {
+	cd "$SYNC_DIR"
+	for ITEM in $(ls -tr)
+	do
 		delete_element "$1" "$ITEM"
 	done
 
 	FILE="$(echo "$1" | sed "s/file:\/\///g")"
 	DIR="$(dirname "$FILE")"
-	if [ -d "$DIR" ] ; then
+	if [ -d "$DIR" ]
+	then
 		URL="$(cat "${DIR}/url.txt")"
 		delete "$URL"
 	fi
 }
 
+
 remove_dir () {
 	cd "$1"
-	if [ ! "$(ls)" = "" ] ; then
+	if [ ! "$(ls)" = "" ]
+	then
 		rm -r ./*
 	fi
 }
+
 
 list_urls () {
 	cd "$SYNCDIR"
@@ -341,52 +218,33 @@ list_urls () {
 	fi
 }
 
+
 download () {
-	case "$1" in
-		"--article")
-			SYNCDIRECTORY="$SYNCARTICLESDIR"
-			LOCALDIRECTORY="$LOCALARTICLESDIR"
-			DOWNLOADCOMMAND='wget -nd -E -H -K -k -p -q '
-			;;
-		"--video")
-			SYNCDIRECTORY="$SYNCVIDEOSDIR"
-			LOCALDIRECTORY="$LOCALVIDEOSDIR"
-			DOWNLOADCOMMAND='youtube-dl --no-playlist'
-			;;
-	esac
-	cd "$SYNCDIRECTORY"
+	DOWNLOAD_COMMAND='wget -nd -E -H -K -k -p -q '
+	cd "$SYNC_DIR"
 	if [ ! "$(ls)" = "" ] ; then
 		for FILE in * ; do
-			cd "$LOCALDIRECTORY"
+			cd "$LOCAL_DIR"
 			if [ ! -d "$FILE" ] ; then
 				mkdir "$FILE"
 				cd "$FILE"
-				LINK="$(cat "$SYNCDIRECTORY"/"$FILE")"
+				LINK="$(cat "$SYNC_DIR"/"$FILE")"
 				echo Download "$LINK"
 				get_title "$LINK" > title.txt
 				echo "$LINK" > url.txt
-				$DOWNLOADCOMMAND "$LINK"
+				$DOWNLOAD_COMMAND "$LINK"
 			fi
 		done
 	fi
 }
 
+
 clean () {
-	case "$1" in
-		"--article")
-			SYNCDIRECTORY="$SYNCARTICLESDIR"
-			LOCALDIRECTORY="$LOCALARTICLESDIR"
-			;;
-		"--video")
-			SYNCDIRECTORY="$SYNCVIDEOSDIR"
-			LOCALDIRECTORY="$LOCALVIDEOSDIR"
-			;;
-	esac
-	cd "$LOCALDIRECTORY"
+	cd "$LOCAL_DIR"
 	if [ ! "$(ls)" = "" ] ; then
 		for DIR in * ; do
 			J=0
-			cd "$SYNCDIRECTORY"
+			cd "$SYNC_DIR"
 			if [ ! "$(ls)" = "" ] ; then
 				for FILE in * ; do
 					if [ "$DIR" = "$FILE" ] ; then
@@ -395,58 +253,35 @@ clean () {
 				done
 			fi
 			if [ $J -eq 0 ] ; then
-				echo Remove "$(cat "${LOCALDIRECTORY}/${DIR}/url.txt")"
-				rm -r "$LOCALDIRECTORY"/"$DIR"
+				echo Remove "$(cat "${LOCAL_DIR}/${DIR}/url.txt")"
+				rm -r "${LOCAL_DIR}/${DIR}"
 			fi
 		done
 	fi
 }
 
-download_all () {
-	download --article
-	download --video
-}
-
-clean_all () {
-	clean --article
-	clean --video
-}
 
 update () {
-	clean_all
-	download_all
+	clean
+	download
 }
+
 
 usage () {
 	cat << EOF
 Use: $(basename "$0") [option]
 Options:   -h, --help                    Display help
            -a, --add url [url2…]         Add url(s)
-           -av, --add-video url [url2…]  Add video(s)
            -l, --list                    List saved items
-           -la, --list-articles          List saved articles
-           -lv, --list-videos            List saved videos
            -lu, --list-urls              List only urls
            -u, --update                  Update local copy
            -f, --force                   Force re-download of an item
-           -fa, --force-article          Force re-download of an article
-           -fv, --force-video            Force re-download of a video
            -F, --force-all               Force re-download of all items
-           -Fa, --force-all-articles     Force re-download of all articles
-           -Fv, --force-all-videos       Force re-download of all videos
            -o, --open                    Open an downloaded item
-           -oa, --open-article           Open an downloaded article
-           -ov, --open-video             Open an downloaded video
            -O, --open-url                Open an item's url
-           -Oa, --open-url-article       Open an article's url
-           -Ov, --open-url-video         Open an video's url
            -r, --remove                  Remove an item
-           -ra, --remove-article         Remove an article
-           -rv, --remove-video           Remove an video
            -d, --delete url              Remove url
            -R, --remove-all              Remove all item
-           -Ra, --remove-all-articles    Remove all articles
-           -Rv, --remove-all-videos      Remove all video
 EOF
 }
 
@@ -457,7 +292,6 @@ if [ $# -eq 0 ] ; then
 fi
 
 if [ ! "$1" = "-a" ] && [ ! "$1" = "--add" ] && [ $# -ge 2 ] && \
-   [ ! "$1" = "-av" ] && [ ! "$1" = "--add-video" ] && \
    [ ! "$1" = "-d" ] && [ ! "$1" = "--delete" ] ; then
 	echo Error: to many arguments
 	usage
@@ -470,13 +304,7 @@ case "$1" in
 		exit 0
 		;;
 	"--list"|"-l")
-		process_sync_av --list
-		;;
-	"--list-articles"|"-la")
-		process_sync --article --list
-		;;
-	"--list-videos"|"-lv")
-		process_sync --video --list
+		process_sync --list
 		;;
 	"--list-urls"|"-lu")
 		list_urls
@@ -489,96 +317,37 @@ case "$1" in
 		fi
 		while test $# -ne 1 ; do
 			shift
-			add --article "$1"
+			add "$1"
 		done
-		download --article
-		;;
-	"--add-video"|"-av")
-		if [ $# -eq 1 ] ; then
-			echo Error: missing argument
-			usage
-			exit 0
-		fi
-		while test $# -ne 1 ; do
-			shift
-			add --video "$1"
-		done
-		download --video
+		download
 		;;
 	"--remove"|"-r")
-		process_sync_av --remove-syncdir
-		clean_all
-		;;
-	"--remove-article"|"-ra")
-		process_sync --article --remove-syncdir
-		clean_all
-		;;
-	"--remove-video"|"-rv")
-		process_sync --video --remove-syncdir
-		clean_all
+		process_sync --remove-syncdir
+		clean
 		;;
 	"--remove-all"|"-R")
-		remove_dir "$SYNCARTICLESDIR"
-		remove_dir "$SYNCVIDEOSDIR"
-		clean_all
-		;;
-	"--remove-all-articles"|"-Ra")
-		remove_dir "$SYNCARTICLESDIR"
-		clean_all
-		;;
-	"--remove-all-videos"|"-Rv")
-		remove_dir "$SYNCVIDEOSDIR"
-		clean_all
+		remove_dir "$SYNC_DIR"
+		remove_dir "$LOCAL_DIR"
+		clean
 		;;
 	"--delete"|"-d")
 		delete "$2"
-		clean_all
+		clean
 		;;
 	"--force"|"-f")
-		process_sync_av --remove-localdir
-		download_all
-		;;
-	"--force-article"|"-fa")
-		process_sync --article --remove-localdir
-		download --article
-		;;
-	"--force-video"|"-fv")
-		process_sync --video --remove-localdir
-		download --video
+		process_sync --remove-localdir
+		download
 		;;
 	"--force-all"|"-F")
-		remove_dir "$LOCALARTICLESDIR"
-		remove_dir "$LOCALVIDEOSDIR"
-		download_all
-		;;
-	"--force-all-articles"|"-Fa")
-		remove_dir "$LOCALARTICLESDIR"
-		download --article
-		;;
-	"--force-all-videos"|"-Fv")
-		remove_dir "$LOCALVIDEOSDIR"
-		download --article
+		remove_dir "$LOCAL_DIR"
+		download
 		;;
 	"--open"|"-o")
-		open_article_video
-		;;
-	"--open-article"|"-oa")
-		open --article
-		;;
-	"--open-video"|"-ov")
-		open --video
+		open
 		;;
 	"--open-url"|"-O")
-		process_sync_av --open-url
-		clean_all
-		;;
-	"--open-url-article"|"-Oa")
-		process_sync --article --open-url
-		clean_all
-		;;
-	"--open-url-video"|"-Ov")
-		process_sync --video --open-url
-		clean_all
+		process_sync --open-url
+		clean
 		;;
 	"--update"|"-u")
 		update
